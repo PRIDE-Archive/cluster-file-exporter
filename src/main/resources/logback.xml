@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+        <resetJUL>true</resetJUL>
+    </contextListener>
+
+    <!-- To enable JMX Management -->
+    <jmxConfigurator/>
+
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%.-1level|%-40.40logger{0}|%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="file" class="ch.qos.logback.core.FileAppender">
+        <file>log/data_provider.log</file>
+
+        <encoder>
+            <pattern>>%.-1level|%-40.40logger{0}|%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="uk.ac.ebi.pride.proteomes.pipeline.provider" level="INFO" />
+    <logger name="uk.ac.ebi.pride.proteomes.db" level="ERROR" />
+    <logger name="org.springframework.batch.item" level="ERROR" />
+    <logger name="org.springframework.jdbc" level="ERROR" />
+    <logger name="org.springframework.beans" level="ERROR" />
+    <!--<logger name="org.hibernate.param" level="debug" />-->
+    <!--<logger name="org.hibernate.sql" level="debug" />-->
+    <!--<logger name="org.hibernate.cfg" level="debug" />-->
+
+    <root level="DEBUG">
+        <appender-ref ref="file"/>
+        <appender-ref ref="console" />
+    </root>
+</configuration>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--suppress SpringSecurityFiltersConfiguredInspection -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <!-- Root Context: defines shared resources visible to all other components -->
+    <!-- property files -->
+    <context:property-placeholder location="classpath:prop/*.properties" ignore-unresolvable="true"/>
+
+    <!-- Callback filter for cross server query support -->
+    <bean class="uk.ac.ebi.pride.web.util.callback.filter.JsonpCallbackFilter" id="jsonpCallbackFilter"/>
+
+    <bean class="uk.ac.ebi.pride.spectracluster.repo.utils.ModificationDetailFetcher" id="modificationDetailFetcher">
+        <constructor-arg name="psiModFile" value="classpath:mod/PSI-MOD.obo"/>
+        <constructor-arg name="uniModFile" value="classpath:mod/unimod.xml"/>
+    </bean>
+
+    <bean class="uk.ac.ebi.pride.spectracluster.repo.dao.cluster.ClusterReader" id="clusterReaderDao">
+        <constructor-arg ref="clusterDataSource"/>
+    </bean>
+
+    <bean class="uk.ac.ebi.pride.spectracluster.repo.dao.stats.ClusterRepoStatisticsReader" id="clusterRepoStatistics">
+        <constructor-arg ref="clusterDataSource"/>
+    </bean>
+
+    <bean class="uk.ac.ebi.pride.spectracluster.repo.dao.library.SpectrumLibraryReader" id="spectrumLibraryReader">
+        <constructor-arg ref="clusterDataSource"/>
+    </bean>
+
+    <!--Setup data source using place holder properties-->
+    <bean id="clusterDataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="${prider.jdbc.driver}"/>
+        <property name="url" value="${prider.jdbc.url}"/>
+        <property name="username" value="${prider.jdbc.user}"/>
+        <property name="password" value="${prider.jdbc.password}"/>
+        <property name="maxActive" value="50"/>
+        <property name="maxIdle" value="25"/>
+        <property name="minIdle" value="1"/>
+        <property name="initialSize" value="1"/>
+        <property name="minEvictableIdleTimeMillis" value="60000"/>
+        <property name="timeBetweenEvictionRunsMillis" value="60000"/>
+        <property name="numTestsPerEvictionRun" value="3"/>
+        <property name="maxWait" value="10000"/>
+        <property name="testOnBorrow" value="true"/>
+        <property name="testWhileIdle" value="true"/>
+        <property name="testOnReturn" value="false"/>
+        <property name="validationQuery" value="SELECT 1 FROM dual"/>
+        <!-- Oracle validation query -->
+    </bean>
+
+</beans>
