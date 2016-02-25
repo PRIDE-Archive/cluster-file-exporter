@@ -95,8 +95,6 @@ public class ClusteringFileExporter {
 
         logger.info("Loading clustering file: {}", clusterReaderDao.toString());
 
-        // create data source
-
         ClusterRepositoryServices service = new ClusterRepositoryServices(clusterReaderDao);
 
         List<Long> clusters = service.getClusterIdsByQuality(ClusterQuality.HIGH);
@@ -112,6 +110,8 @@ public class ClusteringFileExporter {
         for(Specie specie: species.values()){
             SummaryFactory.printFile(service, specie, path, properties, version);
         }
+
+        logger.info("All projects where exported!!!!");
     }
 
     private static void printUsage() {

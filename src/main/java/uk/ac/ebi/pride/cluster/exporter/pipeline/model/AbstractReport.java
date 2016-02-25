@@ -160,4 +160,13 @@ public class AbstractReport {
     public int getNumberProjects(){
         return (projectAccession != null)? projectAccession.size(): 0;
     }
+
+    public boolean containsSpecie(Specie specie) {
+        if(specie == null)
+            return true;
+        for(Specie currentSpecie: species)
+            if(currentSpecie.getTaxonomy().equalsIgnoreCase(specie.getTaxonomy()))
+                return true;
+        return false;
+    }
 }

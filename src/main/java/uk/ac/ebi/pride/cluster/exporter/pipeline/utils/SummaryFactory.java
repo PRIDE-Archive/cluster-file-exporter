@@ -1,6 +1,5 @@
 package uk.ac.ebi.pride.cluster.exporter.pipeline.utils;
 
-import org.apache.commons.cli.HelpFormatter;
 import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
 import uk.ac.ebi.pride.archive.repo.assay.Assay;
 import uk.ac.ebi.pride.archive.repo.assay.AssaySampleCvParam;
@@ -9,7 +8,6 @@ import uk.ac.ebi.pride.archive.repo.assay.instrument.InstrumentModel;
 import uk.ac.ebi.pride.archive.repo.assay.software.Software;
 import uk.ac.ebi.pride.archive.repo.project.Project;
 import uk.ac.ebi.pride.archive.repo.project.ProjectTag;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.exporter.CliOptions;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PSMReport;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PeptideReport;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Specie;
@@ -126,11 +124,17 @@ public final class SummaryFactory {
             PrintStream stream = new PrintStream(filePath);
             printHeaderFile(stream, properties, version, specie);
             SummaryFactory.printPeptideHeader(stream, properties);
+
             for(PeptideReport peptideReport: service.getPeptideReportList())
-                SummaryFactory.printPeptideEntry(stream, peptideReport, properties);
+                if(peptideReport.containsSpecie(specie))
+                    SummaryFactory.printPeptideEntry(stream, peptideReport, properties);
+
             stream.println();
+
             for(PSMReport psmReport: service.getPsmReportList())
-                SummaryFactory.printClusterPeptideEntry(stream, psmReport, properties);
+                if(psmReport.containsSpecie(specie))
+                    SummaryFactory.printClusterPeptideEntry(stream, psmReport, properties);
+
             stream.println();
 
         }
