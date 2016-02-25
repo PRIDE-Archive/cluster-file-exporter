@@ -236,4 +236,11 @@ public class ClusterRepositoryServices {
 
     }
 
+    /**
+     * Retrieve the PSM Report List
+     * @return List<PSMReport> List of reported PSMs
+     */
+    public List<PSMReport> getPsmReportList() {
+        return psmReportList;
+    }
 }

@@ -12,6 +12,8 @@ public class CliOptions {
         // VARIABLES
         FILE("out"),
 
+        VERSION("version"),
+
         // ACTIONS
         HELP("help");
 
@@ -37,9 +39,15 @@ public class CliOptions {
         // VARIABLES
         Option outPath = OptionBuilder
                 .hasArg()
-                .withDescription("The file to import into the database.")
+                .withDescription("The file path to export the cluster results.")
                 .create(OPTIONS.FILE.getValue());
         options.addOption(outPath);
+
+        Option version = OptionBuilder
+                .hasArg()
+                .withDescription("The version of PRIDE Cluster to be included in the result files.")
+                .create(OPTIONS.VERSION.getValue());
+        options.addOption(version);
 
         // ACTIONS
         Option help = new Option(

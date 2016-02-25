@@ -41,6 +41,7 @@ public class PeptideReport {
 
     // Number of spectra where this particular PSMs has been idenfitied
     private int numberSpectra = 0;
+    private String modificationString;
 
 
     /**
@@ -211,5 +212,13 @@ public class PeptideReport {
 
     public float getBestRank() {
         return bestRank;
+    }
+
+    /**
+     * Get the number of clusters where the present peptide has been found
+     * @return
+     */
+    public int getNumberClusters() {
+        return (this.clusterID != null)?this.clusterID.size():0;
     }
 }

@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.cluster.exporter.pipeline.utils;
 
+import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
 import uk.ac.ebi.pride.archive.repo.assay.Assay;
 import uk.ac.ebi.pride.archive.repo.assay.AssaySampleCvParam;
 import uk.ac.ebi.pride.archive.repo.assay.instrument.Instrument;
@@ -7,6 +8,8 @@ import uk.ac.ebi.pride.archive.repo.assay.instrument.InstrumentModel;
 import uk.ac.ebi.pride.archive.repo.assay.software.Software;
 import uk.ac.ebi.pride.archive.repo.project.Project;
 import uk.ac.ebi.pride.archive.repo.project.ProjectTag;
+import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PeptideReport;
+import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Specie;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.quality.IClusterQualityDecider;
 import uk.ac.ebi.pride.jmztab.model.Modification;
 import uk.ac.ebi.pride.jmztab.model.PSM;
@@ -21,6 +24,7 @@ import uk.ac.ebi.pride.spectracluster.spectrum.ISpectrum;
 
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.*;
 
 /**
@@ -30,6 +34,89 @@ import java.util.*;
  * @version $Id$
  */
 public final class SummaryFactory {
+
+    private static final String TAB_SEP = "\t";
+
+    private static final String NULL_VALUE = "NULL";
+
+    /**
+     * This print in the output the header of the Peptide Section
+     * @param stream output file
+     * @param properties propeties containing the header of the section
+     */
+    public static void printPeptideHeader(PrintStream stream, Properties properties) {
+        stream.println(properties.getProperty("peptide.field.header"));
+    }
+
+    /**
+     * This function print a Peptide entry on the Peptide Section including its information
+     * @param stream the output file
+     * @param peptideReport the peptideReport
+     * @param properties the propeties containing the header of the file
+     */
+    public static void printPeptideEntry(PrintStream stream, PeptideReport peptideReport, Properties properties) {
+
+        stream.print(properties.getProperty("peptide.start.header")+TAB_SEP);
+        stream.print(peptideReport.getSequence() + TAB_SEP);
+        stream.print(printValue(summariseMoficiation(peptideReport.getModificationProvider())) + TAB_SEP);
+        stream.print(printValue(peptideReport.getBestRank()) + TAB_SEP);
+        stream.print(printValue(peptideReport.getNumberSpectra()) + TAB_SEP);
+        stream.print(printValue(peptideReport.getNumberOFProjects()) + TAB_SEP);
+        stream.print(printValue(peptideReport.getNumberClusters()) + TAB_SEP);
+        stream.print(printValue(summariseSpecie(peptideReport.getSpecies())) + TAB_SEP);
+        stream.print(printValue(summariseProjects(peptideReport.getProjectAccessions()) + TAB_SEP);
+    }
+
+    private static Object summariseProjects(Set<String> projects) {
+        String projectString = null;
+        if(projects != null){
+            for(String project: projects){
+                projectString = projectString + project + ",";
+            }
+            projectString = removeEndComma(projectString);
+        }
+        return projectString;
+    }
+
+    private static Object summariseSpecie(Set<Specie> species) {
+        String specieString = null;
+        if(species != null){
+            for(Specie specie: species){
+                specieString = specieString + specie.getTaxonomy() + ",";
+            }
+            specieString = removeEndComma(specieString);
+        }
+        return specieString;
+    }
+
+    private static
+
+    private static Object printValue(Object s) {
+        return (s == null) ? NULL_VALUE:s;
+    }
+
+    /**
+     * This function remove form the String the latest ,
+     * @param stringValue the current String
+     * @return the resulted String
+     */
+    private static String removeEndComma(String stringValue){
+       return stringValue.substring(0, stringValue.length() -1); // Remove the latest comma
+    }
+
+    public static String summariseMoficiation(List<ModificationProvider> modifications){
+        String modificationString = null;
+        if(modifications != null && !modifications.isEmpty()){
+            modificationString = "";
+            for(ModificationProvider mod: modifications){
+                for(Integer pos: mod.getPositionMap().keySet())
+                    modificationString = modificationString + pos + "-" + mod.getAccession();
+                modificationString =  modificationString + ",";
+            }
+            modificationString = removeEndComma(modificationString);
+        }
+        return modificationString;
+    }
 
 
     public static AssayDetail summariseAssay(Project project, Assay assay) {
@@ -387,4 +474,6 @@ public final class SummaryFactory {
 
         return concat.substring(0, concat.length() - delimiter.length());
     }
+
+
 }

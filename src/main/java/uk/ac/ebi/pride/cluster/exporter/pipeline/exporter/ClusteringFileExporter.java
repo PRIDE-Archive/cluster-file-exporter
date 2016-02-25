@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PeptideReport;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Specie;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.quality.IClusterQualityDecider;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.services.ClusterRepositoryServices;
@@ -21,8 +22,7 @@ import uk.ac.ebi.pride.spectracluster.repo.model.ClusterDetail;
 import uk.ac.ebi.pride.spectracluster.repo.model.ClusterQuality;
 import uk.ac.ebi.pride.spectracluster.repo.model.ClusterSummary;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 import java.util.List;
 import java.util.Map;
@@ -62,15 +62,18 @@ public class ClusteringFileExporter {
 
             // OUTPUT
             File file;
-            if (commandLine.hasOption(CliOptions.OPTIONS.FILE.getValue()))
+            String version;
+            if (commandLine.hasOption(CliOptions.OPTIONS.FILE.getValue()) && commandLine.hasOption(CliOptions.OPTIONS.VERSION.getValue())){
                 file = new File(commandLine.getOptionValue(CliOptions.OPTIONS.FILE.getValue()));
+                version = commandLine.getOptionValue(CliOptions.OPTIONS.VERSION.getValue());
+            }
             else
-                throw new Exception("Missing required parameter '" + CliOptions.OPTIONS.FILE.getValue() + "'");
+                throw new Exception("Missing required parameter '" + CliOptions.OPTIONS.FILE.getValue() + "or " + CliOptions.OPTIONS.VERSION.getValue() + "'");
 
             if (!file.exists())
                 logger.info("Output .tsv file must be will be re-write with new data");
 
-            writeClusteringResultFile(clusterReadDao, file.getAbsolutePath(), properties, specieMap);
+            writeClusteringResultFile(clusterReadDao, file.getAbsolutePath(), properties, specieMap, version);
 
         } catch (Exception e) {
             logger.error("Error while running cluster importer", e);
@@ -87,7 +90,7 @@ public class ClusteringFileExporter {
      * @param species    The species that PRIDE CLuster will export at the very begining
      * @throws Exception
      */
-    private static void writeClusteringResultFile(IClusterReadDao clusterReaderDao, String path, Properties properties, Map<String, Specie> species) throws Exception {
+    private static void writeClusteringResultFile(IClusterReadDao clusterReaderDao, String path, Properties properties, Map<String, Specie> species, String version) throws Exception {
 
         logger.info("Loading clustering file: {}", clusterReaderDao.toString());
 
@@ -102,42 +105,65 @@ public class ClusteringFileExporter {
         service.buildPeptidePSMReportLists(clusters);
 
         logger.info("Number of HighQuality Clusters: " + service.getPeptideReportList().size());
+
+        printFile(service, null, path, properties, version);
+
+        for(Specie specie: species.values()){
+            printFile(service, specie, path, properties, version);
+        }
+    }
+
+    /**
+     * This function print the corresponding peptides and psms to the file. If the species provided is null
+     * the current method export all the information to the big file.
+     * @param service the service that provides the peptides and cluster peptides
+     * @param specie the species to filter the file
+     * @param path the path where the file will be located
+     * @param properties The properties to be use to generate the file
+     */
+    private static void printFile(ClusterRepositoryServices service, Specie specie, String path, Properties properties, String version) throws FileNotFoundException {
+        String filePath = (specie == null)? path + properties.getProperty("file.name.title")+"_ALL.tsv":
+                path + properties.getProperty("file.name.title")+"_"+specie.getName()+".tsv";
+
+        if(service != null){
+            PrintStream stream = new PrintStream(filePath);
+            printHeaderFile(stream, properties, version, specie);
+            SummaryFactory.printPeptideHeader(stream, properties);
+            for(PeptideReport peptideReport: service.getPeptideReportList()){
+                SummaryFactory.printPeptideEntry(stream, peptideReport, properties);
+            }
+
+        }
+
+
+    }
+
+
+
+    /**
+     * Print in the current file the header for the file including a general description
+     * and specie specific information.
+     * @param stream The File to print the information
+     * @param properties properties containing the information to be printed
+     * @param version the version of cluster
+     * @param specie specie to filter the data.
+     */
+    private static void printHeaderFile(PrintStream stream, Properties properties, String version, Specie specie) {
+
+        String specieString = (specie != null)? specie.getName(): "ALL";
+
+        stream.format(properties.getProperty("release.title"), version);
+        stream.format(properties.getProperty("file.specie"), specieString);
+        stream.println(properties.getProperty("release.description"));
+        stream.println(properties.getProperty("cluster.url"));
+        stream.println(properties.getProperty("peptide.field.description"));
+        stream.println(properties.getProperty("cluster.field.description"));
+        stream.println();
+
     }
 
     private static void printUsage() {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp("PRIDE Cluster - Cluster importer", "Imports cluster results into the PRIDE Cluster database.\n", CliOptions.getOptions(), "\n\n", true);
-    }
-
-    private static class ClusterSourceListener implements IClusterSourceListener {
-
-        private final IClusterWriteDao clusterImporter;
-        private final IClusterQualityDecider<ClusterSummary> clusterQualityDecider;
-
-        public ClusterSourceListener(IClusterWriteDao clusterImporter, IClusterQualityDecider<ClusterSummary> clusterQualityDecider) {
-            this.clusterImporter = clusterImporter;
-            this.clusterQualityDecider = clusterQualityDecider;
-        }
-
-        @Override
-        public void onNewClusterRead(ICluster newCluster) {
-            try {
-                if (newCluster.getSpecCount() > 1) {
-                    String maxSequence = newCluster.getMaxSequence();
-                    Matcher matcher = AMINO_ACID_PATTERN.matcher(maxSequence);
-
-                    // remove clusters that identify illegal peptide sequences
-                    if (matcher.matches()) {
-                        ClusterDetail clusterSummary = SummaryFactory.summariseCluster(newCluster, clusterQualityDecider);
-                        clusterImporter.saveCluster(clusterSummary);
-                    }
-                }
-            } catch (IOException e) {
-                throw new IllegalStateException("Failed to summaries cluster", e);
-            } catch (Exception ex) {
-                //todo: this should be removed when we have re-run the clustering
-                logger.error("Failed to persist cluster: " + newCluster.getId(), ex);
-            }
-        }
     }
 }
