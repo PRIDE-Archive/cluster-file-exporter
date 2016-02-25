@@ -214,13 +214,13 @@ public class ClusterRepositoryServices {
                         PeptideReport currentPeptide = peptideReportList.get(index);
                         currentPeptide.addClusterDetails(cluster);
                         currentPeptide.setBestRank(psmDetail.getRank());
-                        currentPeptide.addSpecie(assayDetail.getSpecies(), assayDetail.getTaxonomyId());
+                        currentPeptide.addSpecie(assayDetail.getTaxonomyId(), assayDetail.getSpecies());
                         currentPeptide.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
                         currentPeptide.addProjectAccession(assayDetail.getProjectAccession());
                         currentPeptide.increaseSpectra();
                     }else{
                         peptideReport.addClusterDetails(cluster);
-                        peptideReport.addSpecie(assayDetail.getSpecies(), assayDetail.getTaxonomyId());
+                        peptideReport.addSpecie(assayDetail.getTaxonomyId(), assayDetail.getSpecies());
                         peptideReport.addProjectAccession(assayDetail.getProjectAccession());
                         peptideReport.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
                         peptideReport.setBestRank(psmDetail.getRank());

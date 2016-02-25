@@ -8,27 +8,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PSMReport;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PeptideReport;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Specie;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.quality.IClusterQualityDecider;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.services.ClusterRepositoryServices;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.utils.PropertyUtils;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.utils.SummaryFactory;
-import uk.ac.ebi.pride.spectracluster.clusteringfilereader.io.IClusterSourceListener;
-import uk.ac.ebi.pride.spectracluster.clusteringfilereader.objects.ICluster;
+
 import uk.ac.ebi.pride.spectracluster.repo.dao.cluster.IClusterReadDao;
-import uk.ac.ebi.pride.spectracluster.repo.dao.cluster.IClusterWriteDao;
-import uk.ac.ebi.pride.spectracluster.repo.model.ClusterDetail;
+
 import uk.ac.ebi.pride.spectracluster.repo.model.ClusterQuality;
-import uk.ac.ebi.pride.spectracluster.repo.model.ClusterSummary;
+
 
 import java.io.*;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -124,6 +118,8 @@ public class ClusteringFileExporter {
 
         List<Long> clusters = service.getClusterIdsByQuality(quality);
 
+        clusters = clusters.subList(0,500);
+
         logger.info("Number of HighQuality Clusters: " + clusters.size());
 
         service.buildPeptidePSMReportLists(clusters);
@@ -143,8 +139,5 @@ public class ClusteringFileExporter {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp("PRIDE Cluster - Cluster importer", "Imports cluster results into the PRIDE Cluster database.\n", CliOptions.getOptions(), "\n\n", true);
     }
-
-
-
 
 }
