@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.cluster.exporter.pipeline.utils;
 
+import org.apache.commons.cli.HelpFormatter;
 import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
 import uk.ac.ebi.pride.archive.repo.assay.Assay;
 import uk.ac.ebi.pride.archive.repo.assay.AssaySampleCvParam;
@@ -8,9 +9,12 @@ import uk.ac.ebi.pride.archive.repo.assay.instrument.InstrumentModel;
 import uk.ac.ebi.pride.archive.repo.assay.software.Software;
 import uk.ac.ebi.pride.archive.repo.project.Project;
 import uk.ac.ebi.pride.archive.repo.project.ProjectTag;
+import uk.ac.ebi.pride.cluster.exporter.pipeline.exporter.CliOptions;
+import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PSMReport;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PeptideReport;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Specie;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.quality.IClusterQualityDecider;
+import uk.ac.ebi.pride.cluster.exporter.pipeline.services.ClusterRepositoryServices;
 import uk.ac.ebi.pride.jmztab.model.Modification;
 import uk.ac.ebi.pride.jmztab.model.PSM;
 import uk.ac.ebi.pride.jmztab.model.Param;
@@ -23,6 +27,7 @@ import uk.ac.ebi.pride.spectracluster.repo.model.*;
 import uk.ac.ebi.pride.spectracluster.spectrum.ISpectrum;
 
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
@@ -38,6 +43,28 @@ public final class SummaryFactory {
     private static final String TAB_SEP = "\t";
 
     private static final String NULL_VALUE = "NULL";
+
+    /**
+     * Print in the current file the header for the file including a general description
+     * and specie specific information.
+     * @param stream The File to print the information
+     * @param properties properties containing the information to be printed
+     * @param version the version of cluster
+     * @param specie specie to filter the data.
+     */
+    private static void printHeaderFile(PrintStream stream, Properties properties, String version, Specie specie) {
+
+        String specieString = (specie != null)? specie.getName(): "ALL";
+
+        stream.format(properties.getProperty("release.title"), version);
+        stream.format(properties.getProperty("file.specie"), specieString);
+        stream.println(properties.getProperty("release.description"));
+        stream.println(properties.getProperty("cluster.url"));
+        stream.println(properties.getProperty("peptide.field.description"));
+        stream.println(properties.getProperty("cluster.field.description"));
+        stream.println();
+
+    }
 
     /**
      * This print in the output the header of the Peptide Section
@@ -58,13 +85,55 @@ public final class SummaryFactory {
 
         stream.print(properties.getProperty("peptide.start.header")+TAB_SEP);
         stream.print(peptideReport.getSequence() + TAB_SEP);
-        stream.print(printValue(summariseMoficiation(peptideReport.getModificationProvider())) + TAB_SEP);
+        stream.print(printValue(summariseMoficiation(peptideReport.getModifications())) + TAB_SEP);
         stream.print(printValue(peptideReport.getBestRank()) + TAB_SEP);
-        stream.print(printValue(peptideReport.getNumberSpectra()) + TAB_SEP);
-        stream.print(printValue(peptideReport.getNumberOFProjects()) + TAB_SEP);
+        stream.print(printValue(peptideReport.getNumSpectra()) + TAB_SEP);
+        stream.print(printValue(peptideReport.getNumberProjects() + TAB_SEP));
         stream.print(printValue(peptideReport.getNumberClusters()) + TAB_SEP);
         stream.print(printValue(summariseSpecie(peptideReport.getSpecies())) + TAB_SEP);
-        stream.print(printValue(summariseProjects(peptideReport.getProjectAccessions()) + TAB_SEP);
+        stream.print(printValue(summariseProjects(peptideReport.getProjectAccession()) + TAB_SEP));
+    }
+
+
+    public static void printClusterPeptideEntry(PrintStream stream, PSMReport psmReport, Properties properties) {
+
+        stream.print(properties.getProperty("peptide.start.header")+TAB_SEP);
+        stream.print(psmReport.getSequence() + TAB_SEP);
+        stream.print(printValue(summariseMoficiation(psmReport.getModifications())) + TAB_SEP);
+        stream.print(printValue(psmReport.getBestRank()) + TAB_SEP);
+        stream.print(printValue(psmReport.getNumSpectra()) + TAB_SEP);
+        stream.print(printValue(psmReport.getNumSpectra()) + TAB_SEP);
+        stream.print(printValue(summariseSpecie(psmReport.getSpecies())) + TAB_SEP);
+        stream.print(printValue(summariseProjects(psmReport.getProjectAccession()) + TAB_SEP));
+
+    }
+
+    /**
+     * This function print the corresponding peptides and psms to the file. If the species provided is null
+     * the current method export all the information to the big file.
+     * @param service the service that provides the peptides and cluster peptides
+     * @param specie the species to filter the file
+     * @param path the path where the file will be located
+     * @param properties The properties to be use to generate the file
+     */
+    public static void printFile(ClusterRepositoryServices service, Specie specie, String path, Properties properties, String version) throws FileNotFoundException {
+
+        String filePath = (specie == null)? path + properties.getProperty("file.name.title")+"_ALL.tsv":
+                path + properties.getProperty("file.name.title")+"_" + specie.getName()+".tsv";
+
+        if(service != null){
+
+            PrintStream stream = new PrintStream(filePath);
+            printHeaderFile(stream, properties, version, specie);
+            SummaryFactory.printPeptideHeader(stream, properties);
+            for(PeptideReport peptideReport: service.getPeptideReportList())
+                SummaryFactory.printPeptideEntry(stream, peptideReport, properties);
+            stream.println();
+            for(PSMReport psmReport: service.getPsmReportList())
+                SummaryFactory.printClusterPeptideEntry(stream, psmReport, properties);
+            stream.println();
+
+        }
     }
 
     private static Object summariseProjects(Set<String> projects) {
@@ -89,7 +158,6 @@ public final class SummaryFactory {
         return specieString;
     }
 
-    private static
 
     private static Object printValue(Object s) {
         return (s == null) ? NULL_VALUE:s;
@@ -474,6 +542,7 @@ public final class SummaryFactory {
 
         return concat.substring(0, concat.length() - delimiter.length());
     }
+
 
 
 }

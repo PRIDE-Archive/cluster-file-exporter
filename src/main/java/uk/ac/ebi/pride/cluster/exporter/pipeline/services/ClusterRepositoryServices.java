@@ -216,12 +216,12 @@ public class ClusterRepositoryServices {
                         currentPeptide.setBestRank(psmDetail.getRank());
                         currentPeptide.addSpecie(assayDetail.getSpecies(), assayDetail.getTaxonomyId());
                         currentPeptide.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
-                        currentPeptide.addProjectAccessions(assayDetail.getProjectAccession());
+                        currentPeptide.addProjectAccession(assayDetail.getProjectAccession());
                         currentPeptide.increaseSpectra();
                     }else{
                         peptideReport.addClusterDetails(cluster);
                         peptideReport.addSpecie(assayDetail.getSpecies(), assayDetail.getTaxonomyId());
-                        peptideReport.addProjectAccessions(assayDetail.getProjectAccession());
+                        peptideReport.addProjectAccession(assayDetail.getProjectAccession());
                         peptideReport.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
                         peptideReport.setBestRank(psmDetail.getRank());
                         peptideReport.getBestClusterPeptideRatio();
