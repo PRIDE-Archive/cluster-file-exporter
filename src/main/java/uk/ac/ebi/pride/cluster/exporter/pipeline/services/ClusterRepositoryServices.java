@@ -192,7 +192,7 @@ public class ClusterRepositoryServices {
                     peptideReport.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
 
                     // Create the PSM Cluster
-                    PSMReport psmReport = new PSMReport(sequence, modifications, cluster);
+                    PSMReport psmReport = new PSMReport(sequence, modifications, cluster, psmDetail.getRank());
 
                     int index;
                     if((index = psmReportList.indexOf(psmReport)) != -1){
@@ -201,6 +201,7 @@ public class ClusterRepositoryServices {
                         currentPSM.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
                         currentPSM.addSpecie(assayDetail.getTaxonomyId(), assayDetail.getSpecies());
                         currentPSM.addProjectAccession(assayDetail.getProjectAccession());
+                        currentPSM.setBestRank(psmDetail.getRank());
                     }else{
                         psmReport.increaseSpectra();
                         psmReport.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
@@ -212,6 +213,7 @@ public class ClusterRepositoryServices {
                     if((index = peptideReportList.indexOf(peptideReport)) != -1){
                         PeptideReport currentPeptide = peptideReportList.get(index);
                         currentPeptide.addClusterDetails(cluster);
+                        currentPeptide.setBestRank(psmDetail.getRank());
                         currentPeptide.addSpecie(assayDetail.getSpecies(), assayDetail.getTaxonomyId());
                         currentPeptide.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
                         currentPeptide.addProjectAccessions(assayDetail.getProjectAccession());
@@ -221,6 +223,7 @@ public class ClusterRepositoryServices {
                         peptideReport.addSpecie(assayDetail.getSpecies(), assayDetail.getTaxonomyId());
                         peptideReport.addProjectAccessions(assayDetail.getProjectAccession());
                         peptideReport.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
+                        peptideReport.setBestRank(psmDetail.getRank());
                         peptideReport.getBestClusterPeptideRatio();
                         peptideReport.increaseSpectra();
                         peptideReportList.add(peptideReport);

@@ -8,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Cluster;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PeptideReport;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Specie;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.quality.IClusterQualityDecider;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.services.ClusterRepositoryServices;
@@ -28,6 +26,7 @@ import java.io.IOException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,14 +42,16 @@ public class ClusteringFileExporter {
 
     public static void main(String[] args) {
 
-        ApplicationContext ctx = new ClassPathXmlApplicationContext("spring/app-context.xml");
-        IClusterReadDao clusterReadDao = (IClusterReadDao) ctx.getBean("clusterReaderDao");
-
-        Map<String, Specie> specieMap = PropertyUtils.loadSpeciesPropertyFile("prop/species_metadata.conf");
-
-        CommandLineParser parser = new GnuParser();
-
         try {
+            ApplicationContext ctx = new ClassPathXmlApplicationContext("spring/app-context.xml");
+            IClusterReadDao clusterReadDao = (IClusterReadDao) ctx.getBean("clusterReaderDao");
+
+            Map<String, Specie> specieMap = PropertyUtils.loadSpeciesPropertyFile("prop/species_metadata.conf");
+
+            Properties properties         = PropertyUtils.loadProperties("prop/prop.properties");
+
+            CommandLineParser parser = new GnuParser();
+
             CommandLine commandLine = parser.parse(CliOptions.getOptions(), args);
 
             // HELP
@@ -69,8 +70,7 @@ public class ClusteringFileExporter {
             if (!file.exists())
                 logger.info("Output .tsv file must be will be re-write with new data");
 
-            loadClusteringFile(clusterReadDao);
-
+            writeClusteringResultFile(clusterReadDao, file.getAbsolutePath(), properties, specieMap);
 
         } catch (Exception e) {
             logger.error("Error while running cluster importer", e);
@@ -78,7 +78,17 @@ public class ClusteringFileExporter {
         }
     }
 
-    private static void loadClusteringFile(IClusterReadDao clusterReaderDao) throws Exception {
+    /**
+     * This function allows to write all the output files for the cluster release in the present path.
+     *
+     * @param clusterReaderDao The cluster instance
+     * @param path The path to write all the output files
+     * @param properties The property files contains all metadata that should be provided in the file
+     * @param species    The species that PRIDE CLuster will export at the very begining
+     * @throws Exception
+     */
+    private static void writeClusteringResultFile(IClusterReadDao clusterReaderDao, String path, Properties properties, Map<String, Specie> species) throws Exception {
+
         logger.info("Loading clustering file: {}", clusterReaderDao.toString());
 
         // create data source
@@ -91,26 +101,7 @@ public class ClusteringFileExporter {
 
         service.buildPeptidePSMReportLists(clusters);
 
-
-
         logger.info("Number of HighQuality Clusters: " + service.getPeptideReportList().size());
-
-
-//        // create cluster reader
-//        IClusterWriteDao clusterDBImporter = new TransactionAwareClusterWriter(clusterRepositoryBuilder.getTransactionManager());
-//
-//        // create cluster quality decider
-//        // todo: this can be changed to retrieving the numbers from command line input
-//        ClusterSummaryQualityDecider clusterSummaryQualityDecider = new ClusterSummaryQualityDecider(3, 1, 0.7f);
-//
-//        // create cluster source listener
-//        ClusterSourceListener clusterSourceListener = new ClusterSourceListener(clusterDBImporter, clusterSummaryQualityDecider);
-//        Collection<IClusterSourceListener> clusterSourceListeners = new ArrayList<IClusterSourceListener>();
-//        clusterSourceListeners.add(clusterSourceListener);
-//
-//        // load clusters
-//        ClusteringFileReader clusteringFileReader = new ClusteringFileReader(file);
-//        clusteringFileReader.readClustersIteratively(clusterSourceListeners);
     }
 
     private static void printUsage() {

@@ -31,6 +31,7 @@ import java.util.*;
  */
 public final class SummaryFactory {
 
+
     public static AssayDetail summariseAssay(Project project, Assay assay) {
         AssayDetail assaySummary = new AssayDetail();
 

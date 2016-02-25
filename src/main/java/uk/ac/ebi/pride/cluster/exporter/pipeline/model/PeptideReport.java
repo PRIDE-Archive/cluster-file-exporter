@@ -37,6 +37,8 @@ public class PeptideReport {
 
     private Double bestClusterPeptideRatio;
 
+    private float bestRank = -1;
+
     // Number of spectra where this particular PSMs has been idenfitied
     private int numberSpectra = 0;
 
@@ -52,6 +54,24 @@ public class PeptideReport {
         this.proteinAccessions = new HashSet<String>();
         this.clusterID = new HashMap<Long, ClusterReport>();
         this.projectAccessions = new HashSet<String>();
+    }
+
+    /**
+     * The default constructor is the one with Sequence + List Modification
+     * @param sequence
+     * @param modificationProvider
+     */
+    public PeptideReport(String sequence, List<ModificationProvider> modificationProvider, int rank) {
+        this.sequence = sequence;
+        this.modificationProvider = modificationProvider;
+        this.proteinAccessions = new HashSet<String>();
+        this.clusterID = new HashMap<Long, ClusterReport>();
+        this.projectAccessions = new HashSet<String>();
+        this.bestRank = (this.bestRank < rank)? rank: bestRank;
+    }
+
+    public void setBestRank(float rank) {
+        this.bestRank = (this.bestRank < rank)? rank: bestRank;
     }
 
     public String getSequence() {
@@ -187,5 +207,9 @@ public class PeptideReport {
      */
     public void increaseSpectra(){
         numberSpectra++;
+    }
+
+    public float getBestRank() {
+        return bestRank;
     }
 }

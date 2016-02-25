@@ -49,6 +49,8 @@ public class PSMReport {
 
     private Set<Specie> specie;
 
+    private float bestRank = -1;
+
     /**
      * Default constructor contains the clusterID, the sequence and Modifications
      * @param clusterID
@@ -70,10 +72,11 @@ public class PSMReport {
      * @param modifications List of mofications
      * @param cluster The cluster details
      */
-    public PSMReport(String sequence, List<ModificationProvider> modifications, ClusterDetail cluster){
+    public PSMReport(String sequence, List<ModificationProvider> modifications, ClusterDetail cluster, float rank){
         this(cluster.getId(), sequence, modifications);
         this.clusterNumberOFProjects = cluster.getNumberOfProjects();
         this.clusterMaxPeptideRatio = cluster.getMaxPeptideRatio();
+        this.bestRank = (bestRank < rank)?rank: bestRank;
     }
 
     public Long getClusterID() {
@@ -170,6 +173,13 @@ public class PSMReport {
             this.specie.add(new Specie(taxonomy,specieName, null));
     }
 
+    public void setBestRank(float rank) {
+        this.bestRank = (bestRank < rank)?rank: bestRank;
+    }
+
+    public float getBestRank() {
+        return bestRank;
+    }
 
 
 }
