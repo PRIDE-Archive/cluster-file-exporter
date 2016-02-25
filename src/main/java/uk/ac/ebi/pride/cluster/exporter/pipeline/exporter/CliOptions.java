@@ -14,6 +14,8 @@ public class CliOptions {
 
         VERSION("version"),
 
+        QUALITY("quality"),
+
         // ACTIONS
         HELP("help");
 
@@ -48,6 +50,15 @@ public class CliOptions {
                 .withDescription("The version of PRIDE Cluster to be included in the result files.")
                 .create(OPTIONS.VERSION.getValue());
         options.addOption(version);
+
+        Option quality = OptionBuilder
+                .hasArg()
+                .withDescription("Quality of the clusters to be exported:\n" +
+                        "\t 0 : for all clusters low-quality to high-quality\n" +
+                        "\t 1 : for all cluster from medium-quality to high-quality\n" +
+                        "\t 2 : for all high-quality cluster\n")
+                .create(OPTIONS.QUALITY.getValue());
+        options.addOption(quality);
 
         // ACTIONS
         Option help = new Option(

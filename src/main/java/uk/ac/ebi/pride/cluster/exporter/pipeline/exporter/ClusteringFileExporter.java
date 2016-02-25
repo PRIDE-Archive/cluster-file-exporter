@@ -71,15 +71,37 @@ public class ClusteringFileExporter {
             else
                 throw new Exception("Missing required parameter '" + CliOptions.OPTIONS.FILE.getValue() + " or " + CliOptions.OPTIONS.VERSION.getValue() + "'");
 
+            ClusterQuality quality = ClusterQuality.HIGH;
+
+            if(commandLine.hasOption(CliOptions.OPTIONS.QUALITY.getValue())){
+                 quality = parseClusterQuality(commandLine.getOptionValue(CliOptions.OPTIONS.QUALITY.getValue()));
+            }
+
+
             if (!file.exists())
                 logger.info("Output .tsv file must be will be re-write with new data");
 
-            writeClusteringResultFile(clusterReadDao, file.getAbsolutePath(), properties, specieMap, version);
+            writeClusteringResultFile(clusterReadDao, quality, file.getAbsolutePath(), properties, specieMap, version);
 
         } catch (Exception e) {
             logger.error("Error while running cluster importer", e);
             System.exit(1);
         }
+    }
+
+    /**
+     * Parse the cluster quality Options
+     * @param optionValue number representation of cluster quality
+     * @return ClusterQuality
+     */
+    private static ClusterQuality parseClusterQuality(String optionValue) {
+        if(optionValue.equalsIgnoreCase("0"))
+            return ClusterQuality.LOW;
+        if(optionValue.equalsIgnoreCase("1"))
+            return ClusterQuality.MEDIUM;
+        if(optionValue.equalsIgnoreCase("2"))
+            return ClusterQuality.HIGH;
+        return ClusterQuality.HIGH;
     }
 
     /**
@@ -91,13 +113,16 @@ public class ClusteringFileExporter {
      * @param species    The species that PRIDE CLuster will export at the very begining
      * @throws Exception
      */
-    private static void writeClusteringResultFile(IClusterReadDao clusterReaderDao, String path, Properties properties, Map<String, Specie> species, String version) throws Exception {
+    private static void writeClusteringResultFile(IClusterReadDao clusterReaderDao, ClusterQuality quality,
+                                                  String path, Properties properties,
+                                                  Map<String, Specie> species,
+                                                  String version) throws Exception {
 
         logger.info("Loading clustering file: {}", clusterReaderDao.toString());
 
         ClusterRepositoryServices service = new ClusterRepositoryServices(clusterReaderDao);
 
-        List<Long> clusters = service.getClusterIdsByQuality(ClusterQuality.HIGH);
+        List<Long> clusters = service.getClusterIdsByQuality(quality);
 
         logger.info("Number of HighQuality Clusters: " + clusters.size());
 
