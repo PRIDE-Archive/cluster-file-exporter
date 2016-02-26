@@ -27,7 +27,7 @@ public class AbstractReport {
     List<ModificationProvider> modifications;
 
     // Number of spectra where this psms has been identified
-    int numSpectra = 0;
+    private int numSpectra = 0;
 
     // peptide cluster Ratio fo the specific PMS
     double clusterMaxPeptideRatio;
@@ -43,7 +43,7 @@ public class AbstractReport {
     // Species related with the particular Peptide or ClusteredPeptide
     Set<Specie> species;
 
-    public AbstractReport(){
+    AbstractReport(){
         species = new HashSet<Specie>();
         projectAccession = new HashSet<String>();
         proteinAccession = new HashSet<String>();

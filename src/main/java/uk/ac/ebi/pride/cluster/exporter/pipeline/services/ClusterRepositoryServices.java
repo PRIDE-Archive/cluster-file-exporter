@@ -180,9 +180,6 @@ public class ClusterRepositoryServices {
             for(ClusteredPSMDetail psmDetail: psmDetails){
                 if (psmDetail.getRank() < 2.0f) {   // This filter all psms for the first consensus peptide
 
-                    if(peptideReportList.size() == 3326){
-                        System.out.println("NP");
-                    }
                     //Create the Peptide
                     String sequence = psmDetail.getSequence();
                     List<ModificationProvider> modifications = ModificationMapper.asModifications(psmDetail.getPsmDetail().getAnchorModifications(),modFetcher);

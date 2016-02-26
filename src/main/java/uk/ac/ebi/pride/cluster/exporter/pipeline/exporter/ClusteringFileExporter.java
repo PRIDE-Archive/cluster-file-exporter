@@ -33,8 +33,6 @@ public class ClusteringFileExporter {
 
     private static final Logger logger = LoggerFactory.getLogger(ClusteringFileExporter.class);
 
-    private static final Pattern AMINO_ACID_PATTERN = Pattern.compile("[ABCDEFGHIJKLMNPQRSTUVWXYZ]+");
-
     public static void main(String[] args) {
 
         try {
@@ -70,7 +68,6 @@ public class ClusteringFileExporter {
             if(commandLine.hasOption(CliOptions.OPTIONS.QUALITY.getValue())){
                  quality = parseClusterQuality(commandLine.getOptionValue(CliOptions.OPTIONS.QUALITY.getValue()));
             }
-
 
             if (!file.exists())
                 logger.info("Output .tsv file must be will be re-write with new data");
@@ -117,8 +114,6 @@ public class ClusteringFileExporter {
         ClusterRepositoryServices service = new ClusterRepositoryServices(clusterReaderDao);
 
         List<Long> clusters = service.getClusterIdsByQuality(quality);
-
-        clusters = clusters.subList(0,500);
 
         logger.info("Number of HighQuality Clusters: " + clusters.size());
 
