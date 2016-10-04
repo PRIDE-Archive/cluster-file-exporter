@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.cluster.exporter.pipeline.model;
 
 import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
 import uk.ac.ebi.pride.spectracluster.repo.model.ClusterDetail;
+import uk.ac.ebi.pride.spectracluster.repo.model.ClusteredPSMReport;
 import uk.ac.ebi.pride.spectracluster.repo.model.PSMDetail;
 
 import java.util.HashSet;
@@ -46,6 +47,19 @@ public class PSMReport extends AbstractReport{
     public PSMReport(String sequence, List<ModificationProvider> modifications, ClusterDetail cluster, float rank){
         this(cluster.getId(), sequence, modifications);
         this.clusterMaxPeptideRatio = cluster.getMaxPeptideRatio();
+        this.bestRank = (bestRank < rank)?rank: bestRank;
+    }
+
+    /**
+     * This constructor allows to create a PSMReport from the correspnding psm in PRIDE CLuster
+     * @param sequence sequence of the psm
+     * @param modifications modifications
+     * @param psmDetail psm details
+     * @param rank ran of the psm in the cluster
+     */
+    public PSMReport(String sequence, List<ModificationProvider> modifications, ClusteredPSMReport psmDetail, float rank) {
+        this(psmDetail.getClusterId(), sequence, modifications);
+        this.clusterMaxPeptideRatio = psmDetail.getClusterMaxPeptideRatio();
         this.bestRank = (bestRank < rank)?rank: bestRank;
     }
 

@@ -30,6 +30,7 @@
         <spectra-cluster.version>1.0.6-SNAPSHOT</spectra-cluster.version>
         <archive-data-provider-api.version>2.0.5</archive-data-provider-api.version>
         <spectra-cluster-repo.version>1.0.3-SNAPSHOT</spectra-cluster-repo.version>
+        <pride-mod.version>2.1.1-SNAPSHOT</pride-mod.version>
     </properties>
 
     <build>
@@ -46,8 +47,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.1</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
             <plugin>
@@ -210,6 +211,14 @@
         <artifactId>archive-repo</artifactId>
         <version>${archive-repo.version}</version>
     </dependency>
+
+       <!-- pride mod library -->
+       <dependency>
+           <groupId>uk.ac.ebi.pride.utilities</groupId>
+           <artifactId>pride-mod</artifactId>
+           <version>${pride-mod.version}</version>
+       </dependency>
+
    </dependencies>
 
     <repositories>

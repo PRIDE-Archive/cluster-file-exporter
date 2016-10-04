@@ -2,7 +2,7 @@ package uk.ac.ebi.pride.cluster.exporter.pipeline.model;
 
 import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
 import uk.ac.ebi.pride.spectracluster.repo.model.ClusterDetail;
-import uk.ac.ebi.pride.spectracluster.repo.model.ClusteredPSMDetail;
+import uk.ac.ebi.pride.spectracluster.repo.model.ClusteredPSMReport;
 
 import java.util.*;
 
@@ -20,7 +20,6 @@ public class PeptideReport extends AbstractReport{
     private Map<Long, ClusterReport> clusterID;
 
     private  double bestClusterPeptideRatio;
-
 
     /**
      * The default constructor is the one with Sequence + List Modification
@@ -57,6 +56,15 @@ public class PeptideReport extends AbstractReport{
         if(!clusterID.containsKey(cluster.getId())){
             ClusterReport reportCluster = new ClusterReport(cluster);
             clusterID.put(cluster.getId(), reportCluster);
+        }
+    }
+
+    public void addClusterDetails(ClusteredPSMReport psmDetail){
+        if(!clusterID.containsKey(psmDetail.getClusterId())){
+            ClusterReport reportCluster = new ClusterReport(psmDetail.getClusterId(), psmDetail.getClusterMaxPeptideRatio(),
+                    psmDetail.getClusterNumberPSMs(), psmDetail.getClusterAvgCharge(), psmDetail.getClusterAvgMz(), psmDetail.getClusterNumberProjects(),
+                    psmDetail.getQuality());
+            clusterID.put(psmDetail.getClusterId(), reportCluster);
         }
     }
 

@@ -51,7 +51,7 @@ public final class PropertyUtils {
         try {
             while((line = bufferStream.readLine()) != null){
                 String[] token = line.split("\t");
-                if( header != 0 && token.length == 3)
+                if( header != 0 && token.length == 4)
                     species.put(token[2], new Specie(token[2], token[1], token[0]));
                 header++;
             }

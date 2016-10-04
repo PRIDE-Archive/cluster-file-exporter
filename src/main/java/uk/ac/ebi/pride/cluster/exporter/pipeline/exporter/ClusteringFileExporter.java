@@ -113,13 +113,9 @@ public class ClusteringFileExporter {
 
         ClusterRepositoryServices service = new ClusterRepositoryServices(clusterReaderDao);
 
-        List<Long> clusters = service.getClusterIdsByQuality(quality);
+        service.buildPeptidePSMReportLists(quality);
 
-        logger.info("Number of HighQuality Clusters: " + clusters.size());
-
-        service.buildPeptidePSMReportLists(clusters);
-
-        logger.info("Number of HighQuality Clusters: " + service.getPeptideReportList().size());
+        logger.info("Number of HighQuality Clusters: ");
 
         SummaryFactory.printFile(service, null, path, properties, version);
 

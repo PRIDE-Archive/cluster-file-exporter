@@ -5,6 +5,7 @@ import uk.ac.ebi.pride.archive.dataprovider.param.CvParamProvider;
 
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Modification;
 import uk.ac.ebi.pride.spectracluster.repo.utils.ModificationDetailFetcher;
+import uk.ac.ebi.pride.spectracluster.repo.utils.ModificationUtils;
 import uk.ac.ebi.pride.utilities.pridemod.model.PTM;
 
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ public class ModificationMapper {
      * @param modificationDetailFetcher
      * @return
      */
-    public static List<ModificationProvider> asModifications(List<ModificationProvider> repoMods,ModificationDetailFetcher modificationDetailFetcher) {
+    public static List<ModificationProvider> asModifications(List<ModificationProvider> repoMods, ModificationDetailFetcher modificationDetailFetcher) {
         List<ModificationProvider> mods = new ArrayList<uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider>();
 
         if (repoMods != null) {
@@ -47,5 +48,19 @@ public class ModificationMapper {
         }
 
         return mods;
+    }
+
+    /**
+     * This function wrapper all the information for the modifications in the web-services level
+     * @param repoMods
+     * @param sequence Sequence of the peptide
+     * @return
+     */
+    public static List<ModificationProvider> asModifications(List<ModificationProvider> repoMods, String sequence) {
+        return ModificationUtils.constructAnchorModification(repoMods, sequence);
+    }
+
+    public static boolean checkWrongAnnotation(List<ModificationProvider> modifications, String sequence) {
+       return ModificationUtils.checkWrongAnnotation(modifications, sequence);
     }
 }

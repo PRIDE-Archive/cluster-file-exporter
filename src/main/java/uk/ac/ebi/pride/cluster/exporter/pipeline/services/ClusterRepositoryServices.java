@@ -3,19 +3,19 @@ package uk.ac.ebi.pride.cluster.exporter.pipeline.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PSMReport;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PeptideReport;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.utils.Constants;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.utils.ModificationMapper;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.utils.PropertyUtils;
-import uk.ac.ebi.pride.jmztab.model.SplitList;
 import uk.ac.ebi.pride.spectracluster.repo.dao.cluster.IClusterReadDao;
 import uk.ac.ebi.pride.spectracluster.repo.model.*;
 import uk.ac.ebi.pride.spectracluster.repo.utils.ModificationDetailFetcher;
 
 
 import java.io.InputStream;
+import java.lang.Long;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 
 
@@ -36,23 +36,10 @@ public class ClusterRepositoryServices {
     private IClusterReadDao clusterReaderDao;
 
     /**
-     * Modification Details Fetcher provides a way to standarize the modifications
-     * from cluster.
+     * This lists contains all PSMs grouped by cluster IDs, the idea is been able to recompute and correct the rank of
+     * each peptideform in the list.
      */
-    private ModificationDetailFetcher modFetcher;
-
-    /**
-     * This lists contains all the peptides collapsed for the list of clusters
-     * PeptideReport is the combination of the Sequence + modification-localization
-     */
-    private List<PeptideReport> peptideReportList;
-
-    /**
-     * This list contains all psms collapsed for a particular cluster
-     * List<PSMReport> contains all the psm  Report
-     */
-    private List<PSMReport> psmReportList;
-
+    private Map<PeptideForm, List<ClusteredPSMReport>> peptideReportMap;
 
     /**
      * Constructor to overwrite the clusterReaderDao object. The modFetcher provide a way to
@@ -62,11 +49,7 @@ public class ClusterRepositoryServices {
      */
     public ClusterRepositoryServices(IClusterReadDao clusterReaderDao) {
         this.clusterReaderDao = clusterReaderDao;
-        InputStream unimod = PropertyUtils.loadModificationStream("mod/unimod.xml");
-        InputStream psiMod = PropertyUtils.loadModificationStream("mod/PSI-MOD.obo");
-        peptideReportList = new ArrayList<PeptideReport>();
-        psmReportList = new ArrayList<PSMReport>();
-        modFetcher = new ModificationDetailFetcher(psiMod, unimod);
+        peptideReportMap = new ConcurrentHashMap<PeptideForm, List<ClusteredPSMReport>>();
     }
 
     /**
@@ -74,7 +57,7 @@ public class ClusterRepositoryServices {
      * @return
      */
     public List<Long> getAllClusterIds(){
-        List<Long> ids = new ArrayList<Long>();
+        List<Long> ids = new ArrayList<java.lang.Long>();
 
         long totalClusters = clusterReaderDao.getNumberOfClusters();
         int nPage = (int) (totalClusters/Constants.CLUSTER_READ_STEP) + 2;
@@ -93,9 +76,9 @@ public class ClusterRepositoryServices {
      * @param clusterQualityFilter
      * @return
      */
-    public List<Long> getClusterIdsByQuality(ClusterQuality clusterQualityFilter){
+    public List<java.lang.Long> getClusterIdsByQuality(ClusterQuality clusterQualityFilter){
 
-        List<Long> ids = new ArrayList<Long>();
+        List<java.lang.Long> ids = new ArrayList<java.lang.Long>();
 
         long totalClusters = clusterReaderDao.getNumberOfClustersByQuality(clusterQualityFilter);
         int nPage = (int) (totalClusters/Constants.CLUSTER_READ_STEP) + 2;
@@ -154,90 +137,95 @@ public class ClusterRepositoryServices {
 
     }
 
-    /**
-     * List of PeptideReports. It should be build using the method buildPeptidePSMReportLists
-     * @return List<PeptideReport >
-     */
-    public List<PeptideReport> getPeptideReportList() {
-        return peptideReportList;
-    }
 
     /**
      * Get The Cluster details List including the Cluster information such as
      * Peptides, Assays, etc.
      *
-     * @param clusterIds clusters Identifiers
-     * @return List of possible clusters.
      */
-    public  void buildPeptidePSMReportLists(List<Long> clusterIds){
+    public  void buildPeptidePSMReportLists(ClusterQuality quality){
 
-        for (Long clusterId : clusterIds) {
+        ConcurrentHashMap<Long, List<ClusteredPSMReport>> clusterReportMap = new ConcurrentHashMap<Long, List<ClusteredPSMReport>>();
 
-            ClusterDetail cluster = clusterReaderDao.findCluster(clusterId);
-
-            List<ClusteredPSMDetail> psmDetails = cluster.getClusteredPSMDetails();
-
-            for(ClusteredPSMDetail psmDetail: psmDetails){
-                if (psmDetail.getRank() < 2.0f) {   // This filter all psms for the first consensus peptide
-
-                    //Create the Peptide
-                    String sequence = psmDetail.getSequence();
-                    List<ModificationProvider> modifications = ModificationMapper.asModifications(psmDetail.getPsmDetail().getAnchorModifications(),modFetcher);
-                    AssayDetail assayDetail = cluster.getAssayDetail(psmDetail.getPsmDetail().getAssayId());
-
-                    PeptideReport peptideReport = new PeptideReport(sequence, modifications);
-                    peptideReport.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
-
-                    // Create the PSM Cluster
-                    PSMReport psmReport = new PSMReport(sequence, modifications, cluster, psmDetail.getRank());
-
-                    int index;
-                    if((index = psmReportList.indexOf(psmReport)) != -1){
-                        PSMReport currentPSM = psmReportList.get(index);
-                        currentPSM.increaseSpectra();
-                        currentPSM.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
-                        currentPSM.addSpecie(assayDetail.getTaxonomyId(), assayDetail.getSpecies());
-                        currentPSM.addProjectAccession(assayDetail.getProjectAccession());
-                        currentPSM.setBestRank(psmDetail.getRank());
-                    }else{
-                        psmReport.increaseSpectra();
-                        psmReport.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
-                        psmReport.addSpecie(assayDetail.getTaxonomyId(), assayDetail.getSpecies());
-                        psmReport.addProjectAccession(assayDetail.getProjectAccession());
-                        psmReportList.add(psmReport);
-                    }
-
-                    if((index = peptideReportList.indexOf(peptideReport)) != -1){
-                        PeptideReport currentPeptide = peptideReportList.get(index);
-                        currentPeptide.addClusterDetails(cluster);
-                        currentPeptide.setBestRank(psmDetail.getRank());
-                        currentPeptide.addSpecie(assayDetail.getTaxonomyId(), assayDetail.getSpecies());
-                        currentPeptide.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
-                        currentPeptide.addProjectAccession(assayDetail.getProjectAccession());
-                        currentPeptide.increaseSpectra();
-                    }else{
-                        peptideReport.addClusterDetails(cluster);
-                        peptideReport.addSpecie(assayDetail.getTaxonomyId(), assayDetail.getSpecies());
-                        peptideReport.addProjectAccession(assayDetail.getProjectAccession());
-                        peptideReport.addProteinAccession(psmDetail.getPsmDetail().getProteinAccession());
-                        peptideReport.setBestRank(psmDetail.getRank());
-                        peptideReport.getBestClusterPeptideRatio();
-                        peptideReport.increaseSpectra();
-                        peptideReportList.add(peptideReport);
-                    }
-
-                    logger.debug("Number of Peptide: " + peptideReportList.size());
-                }
-            }
+        List<AssayReport> assays = clusterReaderDao.readFullAssaySet();
+        Map<java.lang.Long, AssayReport> assayMap = new HashMap<java.lang.Long, AssayReport>();
+        if(assays != null){
+            for(AssayReport assayReport: assays)
+                assayMap.put(assayReport.getId(), assayReport);
         }
+
+
+        java.lang.Long numberCLusteredPSMs = clusterReaderDao.getNumberClusteredPSMs(quality);
+        int nPage = (int) (numberCLusteredPSMs/Constants.CLUSTER_READ_STEP) + 2;
+
+        for(int i = 1; i < nPage; i++){
+
+            long time = System.currentTimeMillis();
+
+            List<ClusteredPSMReport> psmReportList = clusterReaderDao.getClusteredPSMsReport(i, Constants.CLUSTER_READ_STEP, numberCLusteredPSMs, quality).getPageItems();
+
+            psmReportList = psmReportList.parallelStream().map(psm -> {
+                List<ModificationProvider> modifications = ModificationMapper.asModifications(psm.getModifications(), psm.getSequence());
+                if(ModificationMapper.checkWrongAnnotation(modifications, psm.getSequence()))
+                    psm.addWrongAnnotation(Constants.PTM_WRONG_ANNOTATED);
+                psm.setModifications(modifications);
+                psm.setAssay(assayMap.get(psm.getAssayID()));
+                return psm;
+            }).collect(Collectors.toList());
+
+            Map<Long, List<ClusteredPSMReport>> map = psmReportList.parallelStream().collect(Collectors.groupingBy(a -> a.getClusterId()));
+
+            map.entrySet().parallelStream().forEach(e -> clusterReportMap.merge(e.getKey(), e.getValue(), (v1, v2) -> {
+                Set<ClusteredPSMReport> set = new TreeSet<>(v1);
+                set.addAll(v2);
+                return new ArrayList<>(set);
+            }));
+
+            logger.debug("Number of Peptide: " + map.size());
+            logger.debug("Milliseconds Time: " + (System.currentTimeMillis() - time) + " for " + psmReportList.size());
+            break;
+        }
+
+        clusterReportMap.entrySet().parallelStream().forEach(
+                (cluster) -> {
+
+                    Map<PeptideForm, List<ClusteredPSMReport>> clustered = cluster.getValue().parallelStream().collect(Collectors.groupingBy(psm -> psm.getPeptideForm()));
+
+                    clustered = clustered.entrySet().stream()
+                            .sorted(Comparator.<Map.Entry<PeptideForm, List<ClusteredPSMReport>>>comparingInt(e->e.getValue().size()).reversed())
+                            .collect(Collectors.toMap(
+                                    Map.Entry::getKey,
+                                    Map.Entry::getValue,
+                                    (a,b) -> {throw new AssertionError();},
+                                    LinkedHashMap::new
+                            ));
+
+                    Integer sum = clustered.values().stream().mapToInt(List::size).sum();
+                    int rank = 0;
+                    int currentSize = -1;
+                    for(Map.Entry peptideFormEntry: clustered.entrySet()){
+                        List<ClusteredPSMReport> psms = (List<ClusteredPSMReport>) peptideFormEntry.getValue();
+                        for(ClusteredPSMReport psm: psms){
+                            if(currentSize != psms.size()){
+                                rank++;
+                                currentSize = psms.size();
+                            }
+                            psm.setRank(rank);
+                            psm.setPsmRatio(((float)psms.size()/(float)sum));
+                        }
+
+                    }
+                }
+        );
+
+        peptideReportMap = clusterReportMap.entrySet().parallelStream()
+                .flatMap(e -> e.getValue().stream())
+                .collect(Collectors.toList())
+                .parallelStream().collect(Collectors.groupingBy(psm -> psm.getPeptideForm()));
 
     }
 
-    /**
-     * Retrieve the PSM Report List
-     * @return List<PSMReport> List of reported PSMs
-     */
-    public List<PSMReport> getPsmReportList() {
-        return psmReportList;
+    public Map<PeptideForm, List<ClusteredPSMReport>> getPeptideReportMap() {
+        return peptideReportMap;
     }
 }

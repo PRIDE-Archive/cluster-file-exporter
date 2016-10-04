@@ -23,6 +23,16 @@ public class ClusterReport {
 
     ClusterQuality quality;
 
+    public ClusterReport(Long clusterID, float maxPeptideRatio, int numberPSMs, double chargeState, double experimentalMZ, int clusterNumberProjects, ClusterQuality quality) {
+        this.clusterID = clusterID;
+        this.maxPeptideRatio = maxPeptideRatio;
+        this.numberPSMs = numberPSMs;
+        this.chargeState = chargeState;
+        this.experimentalMZ = experimentalMZ;
+        this.clusterNumberProjects = clusterNumberProjects;
+        this.quality = quality;
+    }
+
     public ClusterReport(ClusterDetail cluster) {
         this.clusterID = cluster.getId();
         this.maxPeptideRatio = cluster.getMaxPeptideRatio();

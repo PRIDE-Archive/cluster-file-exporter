@@ -14,7 +14,9 @@ public final class Constants {
     public static final String BRENDA = "BTO";
     public static final String DISEASE = "DOID";
 
-    public static final int CLUSTER_READ_STEP = 5000000;
+    public static final int CLUSTER_READ_STEP = 10000000;
+
+    public static final String PTM_WRONG_ANNOTATED = "Wrong PTM annotations";
 
 
 }

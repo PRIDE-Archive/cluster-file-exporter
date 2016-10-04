@@ -9,7 +9,6 @@ import uk.ac.ebi.pride.archive.repo.assay.software.Software;
 import uk.ac.ebi.pride.archive.repo.project.Project;
 import uk.ac.ebi.pride.archive.repo.project.ProjectTag;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PSMReport;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PeptideReport;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Specie;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.quality.IClusterQualityDecider;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.services.ClusterRepositoryServices;
@@ -22,6 +21,7 @@ import uk.ac.ebi.pride.spectracluster.clusteringfilereader.objects.IModification
 import uk.ac.ebi.pride.spectracluster.clusteringfilereader.objects.IPeptideSpectrumMatch;
 import uk.ac.ebi.pride.spectracluster.clusteringfilereader.objects.ISpectrumReference;
 import uk.ac.ebi.pride.spectracluster.repo.model.*;
+import uk.ac.ebi.pride.spectracluster.repo.model.PeptideForm;
 import uk.ac.ebi.pride.spectracluster.spectrum.ISpectrum;
 
 
@@ -30,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Factory methods for converting external objects to data source friendly version
@@ -93,31 +94,82 @@ public final class SummaryFactory {
      * @param peptideReport the peptideReport
      * @param properties the propeties containing the header of the file
      */
-    public static void printPeptideEntry(PrintStream stream, PeptideReport peptideReport, Properties properties) {
+    public static void printPeptideEntry(PrintStream stream, Map.Entry<PeptideForm, List<ClusteredPSMReport>> peptideReport, Properties properties) {
 
-        stream.print(properties.getProperty("peptide.start.header")+TAB_SEP);
-        stream.print(peptideReport.getSequence() + TAB_SEP);
-        stream.print(printValue(summariseMoficiation(peptideReport.getModifications())) + TAB_SEP);
-        stream.print(printValue(peptideReport.getBestRank()) + TAB_SEP);
-        stream.print(printValue(peptideReport.getNumSpectra()) + TAB_SEP);
-        stream.print(printValue(peptideReport.getNumberProjects() + TAB_SEP));
-        stream.print(printValue(peptideReport.getNumberClusters()) + TAB_SEP);
-        stream.print(printValue(summariseSpecie(peptideReport.getSpecies())) + TAB_SEP);
-        stream.print(printValue(summariseProjects(peptideReport.getProjectAccession()) + END_LINE));
+        PeptideForm peptide = peptideReport.getKey();
+        float filter = Float.parseFloat(properties.getProperty("peptide.rank.filter"));
+        float filterScore = Float.parseFloat(properties.getProperty("peptide.score.filter"));
+
+        TreeSet<ClusteredPSMReport> collect = peptideReport.getValue().parallelStream()
+                .map(c -> (ClusteredPSMReport) c)
+                .filter(c -> c.getRank() <= filter)
+                .filter(c -> c.getPsmRatio() > filterScore)
+                .collect(Collectors.toCollection(
+                        () -> new TreeSet<ClusteredPSMReport>((p1, p2) -> p1.getClusterId().compareTo(p2.getClusterId()))
+                ));
+
+        float bestRank  = Float.MAX_VALUE;
+        float bestRatio = Float.MIN_VALUE;
+        int numSpectra  = 0;
+        boolean wrongAnnotated = false;
+
+        Set<String> taxonomies = new TreeSet<>();
+        Set<String> projects   = new TreeSet<>();
+
+        for(ClusteredPSMReport object: collect){
+            ClusteredPSMReport cluster =  object;
+            bestRank = (cluster.getRank() < bestRank)?cluster.getRank():bestRank;
+            bestRatio = (cluster.getPsmRatio() > bestRatio)?cluster.getPsmRatio():bestRatio;
+            numSpectra += cluster.getNumberOfSpectra();
+            if(cluster.getAssay() != null && cluster.getAssay().getTaxonomyId() != null){
+                String[] taxonomyArr = cluster.getAssay().getTaxonomyId().split(",");
+                taxonomies.addAll(Arrays.asList(taxonomyArr));
+            }
+
+            projects.add(cluster.getAssay().getProjectAccession());
+        }
+        if(collect != null && !collect.isEmpty()){
+            stream.print(properties.getProperty("peptide.start.header") + TAB_SEP);
+            stream.print(peptide.getSequence() + TAB_SEP);
+            stream.print(printValue(summariseMoficiation(peptide.getModifications())) + TAB_SEP);
+            stream.print(printValue(bestRank) + TAB_SEP);
+            stream.print(printFloat(bestRatio) + TAB_SEP);
+            stream.print(printValue(numSpectra) + TAB_SEP);
+            stream.print(printValue(projects.size() + TAB_SEP));
+            stream.print(printValue(collect.size()) + TAB_SEP);
+            stream.print(printValue(summariseSpecie(taxonomies)) + TAB_SEP);
+            stream.print(printValue(summariseProjects(projects) + END_LINE));
+        }
+
     }
 
 
-    public static void printClusterPeptideEntry(PrintStream stream, PSMReport psmReport, Properties properties) {
+    public static void printClusterPeptideEntry(PrintStream stream, Map.Entry<PeptideForm, List<ClusteredPSMReport>> peptideReport, Properties properties) {
 
-        stream.print(properties.getProperty("cluster.peptide.start.header")+TAB_SEP);
-        stream.print(psmReport.getClusterID() + TAB_SEP);
-        stream.print(psmReport.getSequence() + TAB_SEP);
-        stream.print(printValue(summariseMoficiation(psmReport.getModifications())) + TAB_SEP);
-        stream.print(printValue(psmReport.getBestRank()) + TAB_SEP);
-        stream.print(printValue(psmReport.getNumSpectra()) + TAB_SEP);
-        stream.print(printValue(psmReport.getNumSpectra()) + TAB_SEP);
-        stream.print(printValue(summariseSpecie(psmReport.getSpecies())) + TAB_SEP);
-        stream.print(printValue(summariseProjects(psmReport.getProjectAccession()) + END_LINE));
+        float filter = Float.parseFloat(properties.getProperty("peptide.rank.filter"));
+        float filterScore = Float.parseFloat(properties.getProperty("peptide.score.filter"));
+        TreeSet<ClusteredPSMReport> collect = peptideReport.getValue().parallelStream()
+                .map(c -> (ClusteredPSMReport) c)
+                .filter(c -> c.getRank() <= filter)
+                .filter(c -> c.getPsmRatio() > filterScore)
+                .collect(Collectors.toCollection(
+                        () -> new TreeSet<ClusteredPSMReport>((p1, p2) -> p1.getClusterId().compareTo(p2.getClusterId()))
+                ));
+
+        for(ClusteredPSMReport object: collect){
+            stream.print(properties.getProperty("cluster.peptide.start.header")+TAB_SEP);
+            stream.print(object.getClusterId() + TAB_SEP);
+            stream.print(object.getSequence() + TAB_SEP);
+            stream.print(printValue(summariseMoficiation(object.getModifications())) + TAB_SEP);
+            stream.print(printValue(object.getRank()) + TAB_SEP);
+            stream.print(printFloat(object.getPsmRatio()) + TAB_SEP);
+            stream.print(printFloat(object.getDeltaMZ()) + TAB_SEP);
+            stream.print(printValue(object.getClusterNumberSpectra()) + TAB_SEP);
+            stream.print(printValue(object.getClusterNumberProjects() + TAB_SEP));
+            stream.print(printValue(printValue(object.getAssay().getTaxonomyId())) + TAB_SEP);
+//            stream.print(printValue(printValue(object.isWrongAnnotated())) + TAB_SEP);
+            stream.print(printValue(printValue(object.getAssay().getProjectAccession()) + END_LINE));
+        }
 
     }
 
@@ -140,17 +192,47 @@ public final class SummaryFactory {
             printHeaderFile(stream, properties, version, specie);
             SummaryFactory.printPeptideHeader(stream, properties);
 
-            for(PeptideReport peptideReport: service.getPeptideReportList())
-                if(peptideReport.containsSpecie(specie))
-                    SummaryFactory.printPeptideEntry(stream, peptideReport, properties);
+            service.getPeptideReportMap().entrySet().stream()
+                    .filter((a) -> {
+                        List<ClusteredPSMReport> clusters = a.getValue();
+                        if(clusters != null && !clusters.isEmpty()){
+                            clusters = clusters.parallelStream()
+                                    .filter( (cluster) ->{
+                                        ClusteredPSMReport clusterReport = (ClusteredPSMReport) cluster;
+                                        if(specie == null || (clusterReport.getAssay() != null && clusterReport.getAssay().getTaxonomyId() != null && clusterReport.getAssay().getTaxonomyId().contains(specie.getTaxonomy())))
+                                            return true;
+                                        return false;
+                                    })
+                                    .collect(Collectors.toList());
+                        }
+                        if(clusters != null && !clusters.isEmpty())
+                            return true;
+                        return false;
+                    })
+                    .forEach(e -> SummaryFactory.printPeptideEntry(stream, e, properties));
 
             stream.println();
 
             SummaryFactory.printClusterPeptideHeader(stream, properties);
 
-            for(PSMReport psmReport: service.getPsmReportList())
-                if(psmReport.containsSpecie(specie))
-                    SummaryFactory.printClusterPeptideEntry(stream, psmReport, properties);
+            service.getPeptideReportMap().entrySet().stream()
+                    .filter((a) -> {
+                        List<ClusteredPSMReport> clusters = a.getValue();
+                        if(clusters != null && !clusters.isEmpty()){
+                            clusters = clusters.parallelStream()
+                                    .filter( (cluster) ->{
+                                        ClusteredPSMReport clusterReport = (ClusteredPSMReport) cluster;
+                                        if(specie == null || (clusterReport.getAssay() != null && clusterReport.getAssay().getTaxonomyId() != null && clusterReport.getAssay().getTaxonomyId().contains(specie.getTaxonomy())))
+                                            return true;
+                                        return false;
+                                    })
+                                    .collect(Collectors.toList());
+                        }
+                        if(clusters != null && !clusters.isEmpty())
+                            return true;
+                        return false;
+                    })
+                    .forEach(e -> SummaryFactory.printClusterPeptideEntry(stream, e, properties));
 
             stream.println();
 
@@ -162,19 +244,19 @@ public final class SummaryFactory {
         if(projects != null){
             projectString = "";
             for(String project: projects){
-                projectString = projectString + project + ",";
+                projectString = projectString + project + ";";
             }
             projectString = removeEndComma(projectString);
         }
         return projectString;
     }
 
-    private static Object summariseSpecie(Set<Specie> species) {
+    private static Object summariseSpecie(Set<String> species) {
         String specieString = null;
         if(species != null){
             specieString = "";
-            for(Specie specie: species){
-                specieString = specieString + specie.getTaxonomy() + ",";
+            for(String specie: species){
+                specieString = specieString + specie + ";";
             }
             specieString = removeEndComma(specieString);
         }
@@ -186,13 +268,18 @@ public final class SummaryFactory {
         return (s == null) ? NULL_VALUE:s;
     }
 
+    private static String printFloat(Float s){
+        return (s == null)? NULL_VALUE: String.format("%.02f", s);
+    }
     /**
      * This function remove form the String the latest ,
      * @param stringValue the current String
      * @return the resulted String
      */
     private static String removeEndComma(String stringValue){
-       return stringValue.substring(0, stringValue.length() -1); // Remove the latest comma
+        if(stringValue != null && stringValue.contains(";"))
+         return stringValue.substring(0, stringValue.length() -1); // Remove the latest comma
+        return stringValue;
     }
 
     public static String summariseMoficiation(List<ModificationProvider> modifications){
@@ -313,7 +400,7 @@ public final class SummaryFactory {
      * @return
      */
     public static PSMDetail summarisePSM(PSM psm, String projectAccession,
-                                         Long assayId, String assayAccession,
+                                         java.lang.Long assayId, String assayAccession,
                                          int numOfMsRun) {
         PSMDetail psmSummary = new PSMDetail();
 
@@ -408,7 +495,7 @@ public final class SummaryFactory {
                 + PeptideUtils.cleanPeptideSequence(psm.getSequence());
     }
 
-    public static SpectrumDetail summariseSpectrum(ISpectrum spectrum, Long assayId, boolean identified) {
+    public static SpectrumDetail summariseSpectrum(ISpectrum spectrum, java.lang.Long assayId, boolean identified) {
         SpectrumDetail spectrumSummary = new SpectrumDetail();
 
         spectrumSummary.setAssayId(assayId);
