@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.io.*;
 
 /**
  * Factory methods for converting external objects to data source friendly version
@@ -244,7 +245,7 @@ public final class SummaryFactory {
         if(projects != null){
             projectString = "";
             for(String project: projects){
-                projectString = projectString + project + ";";
+                projectString = projectString + project + ",";
             }
             projectString = removeEndComma(projectString);
         }
@@ -256,7 +257,7 @@ public final class SummaryFactory {
         if(species != null){
             specieString = "";
             for(String specie: species){
-                specieString = specieString + specie + ";";
+                specieString = specieString + specie + ",";
             }
             specieString = removeEndComma(specieString);
         }
@@ -277,7 +278,7 @@ public final class SummaryFactory {
      * @return the resulted String
      */
     private static String removeEndComma(String stringValue){
-        if(stringValue != null && stringValue.contains(";"))
+        if(stringValue != null && stringValue.contains(","))
          return stringValue.substring(0, stringValue.length() -1); // Remove the latest comma
         return stringValue;
     }
@@ -287,11 +288,15 @@ public final class SummaryFactory {
         if(modifications != null && !modifications.isEmpty()){
             modificationString = "";
             for(ModificationProvider mod: modifications){
-                for(Integer pos: mod.getPositionMap().keySet())
-                    modificationString = modificationString + pos + "-" + mod.getAccession();
-                modificationString =  modificationString + ",";
+                for(Integer pos: mod.getPositionMap().keySet()) {
+
+                    if (!modificationString.equals("")) {
+                        modificationString += ",";
+                    }
+                    modificationString += pos + "-" + mod.getAccession();
+                }
             }
-            modificationString = removeEndComma(modificationString);
+
         }
         return modificationString;
     }
