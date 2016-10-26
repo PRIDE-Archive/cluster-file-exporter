@@ -9,6 +9,7 @@ package uk.ac.ebi.pride.cluster.exporter.pipeline.utils;
 public final class Constants {
 
     public static final String COMMA = ",";
+    public static final String PLOT = ".";
 
     public static final String NEWT = "NEWT";
     public static final String BRENDA = "BTO";
