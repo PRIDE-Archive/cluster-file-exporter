@@ -58,35 +58,21 @@
     </properties>
 
     <dependencies>
-        <!--logging-->
+        <!-- Logging -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>${slf4j-api.version}</version>
+            <groupId>uk.ac.ebi.pride.architectural</groupId>
+            <artifactId>pride-logging</artifactId>
+            <type>pom</type>
+            <version>${uk.ac.ebi.pride.architectural-pride-logging.version}</version>
         </dependency>
+        <!-- TDD -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jcl-over-slf4j</artifactId>
-            <version>${jcl-over-slf4j.version}</version>
+            <groupId>uk.ac.ebi.pride.architectural</groupId>
+            <artifactId>pride-tdd</artifactId>
+            <type>pom</type>
+            <version>${uk.ac.ebi.pride.architectural-pride-tdd.version}</version>
+            <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
-            <version>${logback-core.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback-core.version}</version>
-        </dependency>
-
-        <!-- unit test -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-        </dependency>
-
         <!-- jmzTab -->
         <dependency>
             <groupId>uk.ac.ebi.pride</groupId>
@@ -168,7 +154,7 @@
         </dependency>
 
     </dependencies>
-    
+
     <build>
         <resources>
             <resource>
