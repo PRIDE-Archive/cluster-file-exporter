@@ -97,14 +97,14 @@
         <dependency>
             <groupId>uk.ac.ebi.pride.spectracluster</groupId>
             <artifactId>spectra-cluster-repo</artifactId>
-            <version>${spectra-cluster-repo.version}</version>
+            <version>1.0.2</version>
         </dependency>
 
         <!--clustering file reader -->
         <dependency>
             <groupId>uk.ac.ebi.pride.spectracluster</groupId>
             <artifactId>clustering-file-reader</artifactId>
-            <version>${clustering-file-reader.version}</version>
+            <version>1.2</version>
         </dependency>
 
         <!-- command line parser-->
