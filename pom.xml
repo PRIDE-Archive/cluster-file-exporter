@@ -201,7 +201,8 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>uk.ac.ebi.pride.tools.cluster.loader.ClusteringFileLoader</mainClass>
+                            <!-- <mainClass>uk.ac.ebi.pride.tools.cluster.loader.ClusteringFileLoader</mainClass> -->
+                            <mainClass>uk.ac.ebi.pride.cluster.exporter.pipeline.exporter.ClusteringFileExporter</mainClass>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib</classpathPrefix>
                             <useUniqueVersions>false</useUniqueVersions>
