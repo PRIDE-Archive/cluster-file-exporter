@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.cluster.exporter.pipeline.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
 import uk.ac.ebi.pride.archive.repo.assay.Assay;
 import uk.ac.ebi.pride.archive.repo.assay.AssaySampleCvParam;
@@ -40,6 +42,7 @@ import java.io.*;
  * @version $Id$
  */
 public final class SummaryFactory {
+    private static final Logger logger = LoggerFactory.getLogger(SummaryFactory.class);
 
     private static final String TAB_SEP = "\t";
 
@@ -200,6 +203,7 @@ public final class SummaryFactory {
                             clusters = clusters.parallelStream()
                                     .filter( (cluster) ->{
                                         ClusteredPSMReport clusterReport = (ClusteredPSMReport) cluster;
+                                        logger.debug("printFile - 'Species in Assay' ---> '{}'", String.join(",", cluster.getAssay().getSpecies()));
                                         if(specie == null || (clusterReport.getAssay() != null && clusterReport.getAssay().getTaxonomyId() != null && clusterReport.getAssay().getTaxonomyId().contains(specie.getTaxonomy())))
                                             return true;
                                         return false;
