@@ -203,7 +203,8 @@ public final class SummaryFactory {
                             clusters = clusters.parallelStream()
                                     .filter( (cluster) ->{
                                         ClusteredPSMReport clusterReport = (ClusteredPSMReport) cluster;
-                                        logger.debug("printFile - 'Species in Assay' ---> '{}'", String.join(",", cluster.getAssay().getSpecies()));
+                                        //logger.debug("printFile - 'Taxonomy ID in Assay' ---> '{}'", String.join(",", cluster.getAssay().getTaxonomyId()));
+                                        // TODO this is the place for injecting the filtering of multispecies entries
                                         if(specie == null || (clusterReport.getAssay() != null && clusterReport.getAssay().getTaxonomyId() != null && clusterReport.getAssay().getTaxonomyId().contains(specie.getTaxonomy())))
                                             return true;
                                         return false;
