@@ -47,7 +47,7 @@
         <clustering-file-reader.version>1.3-SNAPSHOT</clustering-file-reader.version>
         <commons-cli.version>1.2</commons-cli.version>
         <commons-dbcp.version>1.4</commons-dbcp.version>
-        <spring-jdbc.version>3.2.9.RELEASE</spring-jdbc.version>
+        <spring-jdbc.version>4.3.8.RELEASE</spring-jdbc.version>
         <oracle-thin.version>11.2.0.1.0</oracle-thin.version>
         <archive-repo.version>0.1.19-SNAPSHOT</archive-repo.version>
         <jmztab.version>3.0.2-SNAPSHOT</jmztab.version>
@@ -97,7 +97,7 @@
         <dependency>
             <groupId>uk.ac.ebi.pride.spectracluster</groupId>
             <artifactId>spectra-cluster-repo</artifactId>
-            <version>1.0.4</version>
+            <version>1.0.5</version>
         </dependency>
 
         <!--clustering file reader -->
