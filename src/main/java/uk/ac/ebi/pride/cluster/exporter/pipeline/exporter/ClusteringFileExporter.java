@@ -12,18 +12,12 @@ import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Specie;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.services.ClusterRepositoryServices;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.utils.PropertyUtils;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.utils.SummaryFactory;
-
 import uk.ac.ebi.pride.spectracluster.repo.dao.cluster.IClusterReadDao;
-
 import uk.ac.ebi.pride.spectracluster.repo.model.ClusterQuality;
 
-
-import java.io.*;
-
-import java.util.List;
+import java.io.File;
 import java.util.Map;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
 /**
  * @author Yasset Perez-Riverol
@@ -67,6 +61,10 @@ public class ClusteringFileExporter {
 
             if(commandLine.hasOption(CliOptions.OPTIONS.QUALITY.getValue())){
                  quality = parseClusterQuality(commandLine.getOptionValue(CliOptions.OPTIONS.QUALITY.getValue()));
+            }
+
+            if (commandLine.hasOption(CliOptions.OPTIONS.FILTER_OUT_MULTITAXONOMIES.getValue())) {
+                ConfigurationService.getService().setFilterOutMultitaxonomies();
             }
 
             if (!file.exists())
