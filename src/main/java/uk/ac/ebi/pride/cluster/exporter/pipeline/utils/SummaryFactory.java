@@ -10,7 +10,7 @@ import uk.ac.ebi.pride.archive.repo.assay.instrument.InstrumentModel;
 import uk.ac.ebi.pride.archive.repo.assay.software.Software;
 import uk.ac.ebi.pride.archive.repo.project.Project;
 import uk.ac.ebi.pride.archive.repo.project.ProjectTag;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.model.PSMReport;
+import uk.ac.ebi.pride.cluster.exporter.pipeline.exporter.ConfigurationService;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Specie;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.quality.IClusterQualityDecider;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.services.ClusterRepositoryServices;
@@ -23,9 +23,7 @@ import uk.ac.ebi.pride.spectracluster.clusteringfilereader.objects.IModification
 import uk.ac.ebi.pride.spectracluster.clusteringfilereader.objects.IPeptideSpectrumMatch;
 import uk.ac.ebi.pride.spectracluster.clusteringfilereader.objects.ISpectrumReference;
 import uk.ac.ebi.pride.spectracluster.repo.model.*;
-import uk.ac.ebi.pride.spectracluster.repo.model.PeptideForm;
 import uk.ac.ebi.pride.spectracluster.spectrum.ISpectrum;
-
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,7 +31,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.io.*;
 
 /**
  * Factory methods for converting external objects to data source friendly version
@@ -177,6 +174,18 @@ public final class SummaryFactory {
 
     }
 
+    private static boolean filterClusteredPsmReport(ClusteredPSMReport clusteredPSMReport, Specie specie) {
+        //logger.debug("printFile - 'Taxonomy ID in Assay' ---> '{}'", String.join(",", cluster.getAssay().getTaxonomyId()));
+        // TODO this is the place for injecting the filtering of multispecies entries
+        if (ConfigurationService.getService().isFilterOutMultitaxonomies() && (clusteredPSMReport.getAssay().getTaxonomyId().split(",").length > 1)) {
+            logger.debug("Filtering out this entry, taxonomy IDs({}), from the final exported dataset", clusteredPSMReport.getAssay().getTaxonomyId());
+            return false;
+        }
+        if(specie == null || (clusteredPSMReport.getAssay() != null && clusteredPSMReport.getAssay().getTaxonomyId() != null && clusteredPSMReport.getAssay().getTaxonomyId().contains(specie.getTaxonomy())))
+            return true;
+        return false;
+    }
+
     /**
      * This function print the corresponding peptides and psms to the file. If the species provided is null
      * the current method export all the information to the big file.
@@ -201,14 +210,7 @@ public final class SummaryFactory {
                         List<ClusteredPSMReport> clusters = a.getValue();
                         if(clusters != null && !clusters.isEmpty()){
                             clusters = clusters.parallelStream()
-                                    .filter( (cluster) ->{
-                                        ClusteredPSMReport clusterReport = (ClusteredPSMReport) cluster;
-                                        //logger.debug("printFile - 'Taxonomy ID in Assay' ---> '{}'", String.join(",", cluster.getAssay().getTaxonomyId()));
-                                        // TODO this is the place for injecting the filtering of multispecies entries
-                                        if(specie == null || (clusterReport.getAssay() != null && clusterReport.getAssay().getTaxonomyId() != null && clusterReport.getAssay().getTaxonomyId().contains(specie.getTaxonomy())))
-                                            return true;
-                                        return false;
-                                    })
+                                    .filter( (cluster) -> filterClusteredPsmReport(cluster, specie) )
                                     .collect(Collectors.toList());
                         }
                         if(clusters != null && !clusters.isEmpty())
@@ -226,12 +228,7 @@ public final class SummaryFactory {
                         List<ClusteredPSMReport> clusters = a.getValue();
                         if(clusters != null && !clusters.isEmpty()){
                             clusters = clusters.parallelStream()
-                                    .filter( (cluster) ->{
-                                        ClusteredPSMReport clusterReport = (ClusteredPSMReport) cluster;
-                                        if(specie == null || (clusterReport.getAssay() != null && clusterReport.getAssay().getTaxonomyId() != null && clusterReport.getAssay().getTaxonomyId().contains(specie.getTaxonomy())))
-                                            return true;
-                                        return false;
-                                    })
+                                    .filter( (cluster) -> filterClusteredPsmReport(cluster, specie) )
                                     .collect(Collectors.toList());
                         }
                         if(clusters != null && !clusters.isEmpty())
