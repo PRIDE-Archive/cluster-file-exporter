@@ -177,7 +177,11 @@ public final class SummaryFactory {
     private static boolean filterClusteredPsmReport(ClusteredPSMReport clusteredPSMReport, Specie specie) {
         //logger.debug("printFile - 'Taxonomy ID in Assay' ---> '{}'", String.join(",", cluster.getAssay().getTaxonomyId()));
         // TODO this is the place for injecting the filtering of multispecies entries
-        if (ConfigurationService.getService().isFilterOutMultitaxonomies() && (clusteredPSMReport.getAssay().getTaxonomyId().split(",").length > 1)) {
+        if (ConfigurationService.getService().isFilterOutMultitaxonomies()
+                && (clusteredPSMReport != null)
+                && (clusteredPSMReport.getAssay() != null)
+                && (clusteredPSMReport.getAssay().getTaxonomyId() != null)
+                && (clusteredPSMReport.getAssay().getTaxonomyId().split(",").length > 1)) {
             logger.debug("Filtering out this entry, taxonomy IDs({}), from the final exported dataset", clusteredPSMReport.getAssay().getTaxonomyId());
             return false;
         }
