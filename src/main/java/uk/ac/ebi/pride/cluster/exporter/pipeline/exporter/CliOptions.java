@@ -16,6 +16,8 @@ public class CliOptions {
 
         QUALITY("quality"),
 
+        FILTER_OUT_MULTITAXONOMIES("filter_out_multitaxonomies"),
+
         // ACTIONS
         HELP("help");
 
@@ -59,6 +61,11 @@ public class CliOptions {
                         "\t 2 : for all high-quality cluster\n")
                 .create(OPTIONS.QUALITY.getValue());
         options.addOption(quality);
+
+        Option filter_out_multitaxonomies = OptionBuilder
+                .withDescription("Filter, remove multitaxonomy entries from the summary file")
+                .create(OPTIONS.FILTER_OUT_MULTITAXONOMIES.getValue());
+        options.addOption(filter_out_multitaxonomies);
 
         // ACTIONS
         Option help = new Option(
