@@ -30,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -169,29 +170,49 @@ public final class SummaryFactory {
 
         float filter = Float.parseFloat(properties.getProperty("peptide.rank.filter"));
         float filterScore = Float.parseFloat(properties.getProperty("peptide.score.filter"));
+        AtomicBoolean filterMultitaxonomy = new AtomicBoolean(false);
         TreeSet<ClusteredPSMReport> collect = peptideReport.getValue().parallelStream()
                 .map(c -> (ClusteredPSMReport) c)
                 .filter(c -> c.getRank() <= filter)
                 .filter(c -> c.getPsmRatio() > filterScore)
+                .filter(c -> {
+                    if (filterMultitaxonomyClusteredPsmReport(c)) {
+                        filterMultitaxonomy.set(true);
+                        // Filter it out of the output dataset
+                        return false;
+                    }
+                    // Filter it in, in the output dataset
+                    return true;
+                })
                 .collect(Collectors.toCollection(
                         () -> new TreeSet<ClusteredPSMReport>((p1, p2) -> p1.getClusterId().compareTo(p2.getClusterId()))
                 ));
 
-        for(ClusteredPSMReport object: collect){
-            stream.print(properties.getProperty("cluster.peptide.start.header")+TAB_SEP);
-            stream.print(object.getClusterId() + TAB_SEP);
-            stream.print(object.getSequence() + TAB_SEP);
-            stream.print(printValue(summariseMoficiation(object.getModifications())) + TAB_SEP);
-            stream.print(printValue(object.getRank()) + TAB_SEP);
-            stream.print(printFloat(object.getPsmRatio()) + TAB_SEP);
-            stream.print(printFloat(object.getDeltaMZ()) + TAB_SEP);
-            stream.print(printValue(object.getClusterNumberSpectra()) + TAB_SEP);
-            stream.print(printValue(object.getClusterNumberProjects() + TAB_SEP));
-            stream.print(printValue(printValue(object.getAssay().getTaxonomyId())) + TAB_SEP);
-//            stream.print(printValue(printValue(object.isWrongAnnotated())) + TAB_SEP);
-            stream.print(printValue(printValue(object.getAssay().getProjectAccession()) + END_LINE));
+        if (filterMultitaxonomy.get()) {
+            String sequence = "---N/A---";
+            if ((collect != null) && (!collect.isEmpty()) && (collect.first() != null) && (collect.first().getSequence() != null)) {
+                sequence = collect.first().getSequence();
+            }
+            logger.debug("FILTER_OUT_MULTITAXONOMIES ---> {} {} With multiple taxonomies",
+                    properties.getProperty("cluster.peptide.start.header"),
+                    sequence
+            );
+        } else {
+            for(ClusteredPSMReport object: collect){
+                stream.print(properties.getProperty("cluster.peptide.start.header")+TAB_SEP);
+                stream.print(object.getClusterId() + TAB_SEP);
+                stream.print(object.getSequence() + TAB_SEP);
+                stream.print(printValue(summariseMoficiation(object.getModifications())) + TAB_SEP);
+                stream.print(printValue(object.getRank()) + TAB_SEP);
+                stream.print(printFloat(object.getPsmRatio()) + TAB_SEP);
+                stream.print(printFloat(object.getDeltaMZ()) + TAB_SEP);
+                stream.print(printValue(object.getClusterNumberSpectra()) + TAB_SEP);
+                stream.print(printValue(object.getClusterNumberProjects() + TAB_SEP));
+                stream.print(printValue(printValue(object.getAssay().getTaxonomyId())) + TAB_SEP);
+    //            stream.print(printValue(printValue(object.isWrongAnnotated())) + TAB_SEP);
+                stream.print(printValue(printValue(object.getAssay().getProjectAccession()) + END_LINE));
+            }
         }
-
     }
 
     private static boolean filterClusteredPsmReport(ClusteredPSMReport clusteredPSMReport, Specie specie) {
@@ -200,18 +221,22 @@ public final class SummaryFactory {
         return false;
     }
 
-    private static boolean filterOutMultitaxonomyClusteredPsmReport(ClusteredPSMReport clusteredPSMReport) {
+    /**
+     * Implements a filtering criteria for when a clustered PSM report has multiple taxonomies and the filter for
+     * multitaxonomy entries is on
+     *
+     * @param clusteredPSMReport clustered PSM report to test against the filter
+     * @return true when the given report matches the criteria, false otherwise
+     */
+    private static boolean filterMultitaxonomyClusteredPsmReport(ClusteredPSMReport clusteredPSMReport) {
         if ((clusteredPSMReport != null)
                 && (clusteredPSMReport.getAssay() != null)
                 && (clusteredPSMReport.getAssay().getTaxonomyId() != null)
                 && (clusteredPSMReport.getAssay().getTaxonomyId().split(",").length > 1)
                 ) {
-            logger.debug("FILETER_OUT_MULTITAXONOMY - Removed CPE entry for peptide '{}', taxonomies ({})",
-                    (clusteredPSMReport.getPeptideForm() != null ? clusteredPSMReport.getPeptideForm().getSequence() : "---N/A---"),
-                    clusteredPSMReport.getAssay().getTaxonomyId());
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**
@@ -256,8 +281,7 @@ public final class SummaryFactory {
                         List<ClusteredPSMReport> clusters = a.getValue();
                         if(clusters != null && !clusters.isEmpty()){
                             clusters = clusters.parallelStream()
-                                    .filter( (cluster) -> filterClusteredPsmReport(cluster, specie)
-                                            && filterOutMultitaxonomyClusteredPsmReport(cluster) )
+                                    .filter( (cluster) -> filterClusteredPsmReport(cluster, specie) )
                                     .collect(Collectors.toList());
                         }
                         if(clusters != null && !clusters.isEmpty())
