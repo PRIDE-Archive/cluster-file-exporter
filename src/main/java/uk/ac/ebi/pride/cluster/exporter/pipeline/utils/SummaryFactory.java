@@ -129,19 +129,39 @@ public final class SummaryFactory {
 
             projects.add(cluster.getAssay().getProjectAccession());
         }
-        if(collect != null && !collect.isEmpty()){
-            stream.print(properties.getProperty("peptide.start.header") + TAB_SEP);
-            stream.print(peptide.getSequence() + TAB_SEP);
-            stream.print(printValue(summariseMoficiation(peptide.getModifications())) + TAB_SEP);
-            stream.print(printValue(bestRank) + TAB_SEP);
-            stream.print(printFloat(bestRatio) + TAB_SEP);
-            stream.print(printValue(numSpectra) + TAB_SEP);
-            stream.print(printValue(projects.size() + TAB_SEP));
-            stream.print(printValue(collect.size()) + TAB_SEP);
-            stream.print(printValue(summariseSpecie(taxonomies)) + TAB_SEP);
-            stream.print(printValue(summariseProjects(projects) + END_LINE));
-        }
 
+
+        if(collect != null && !collect.isEmpty()){
+            // This is the real injection point for the multitaxonomy filter
+            if (ConfigurationService.getService().isFilterOutMultitaxonomies()
+                    && taxonomies.size() > 1) {
+                // When active, this filter removes those entries in the "PEP" table whose collapsed clustering
+                // information presents several taxonomies
+                logger.debug("FILTER_OUT_MULTITAXONOMIES ---> {}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                        properties.getProperty("peptide.start.header"),
+                        peptide.getSequence(),
+                        printValue(summariseMoficiation(peptide.getModifications())),
+                        printValue(bestRank),
+                        printFloat(bestRatio),
+                        printValue(numSpectra),
+                        printValue(projects.size()),
+                        printValue(collect.size()),
+                        printValue(summariseSpecie(taxonomies)),
+                        printValue(summariseProjects(projects))
+                );
+            } else {
+                stream.print(properties.getProperty("peptide.start.header") + TAB_SEP);
+                stream.print(peptide.getSequence() + TAB_SEP);
+                stream.print(printValue(summariseMoficiation(peptide.getModifications())) + TAB_SEP);
+                stream.print(printValue(bestRank) + TAB_SEP);
+                stream.print(printFloat(bestRatio) + TAB_SEP);
+                stream.print(printValue(numSpectra) + TAB_SEP);
+                stream.print(printValue(projects.size() + TAB_SEP));
+                stream.print(printValue(collect.size()) + TAB_SEP);
+                stream.print(printValue(summariseSpecie(taxonomies)) + TAB_SEP);
+                stream.print(printValue(summariseProjects(projects) + END_LINE));
+            }
+        }
     }
 
 
@@ -175,19 +195,23 @@ public final class SummaryFactory {
     }
 
     private static boolean filterClusteredPsmReport(ClusteredPSMReport clusteredPSMReport, Specie specie) {
-        //logger.debug("printFile - 'Taxonomy ID in Assay' ---> '{}'", String.join(",", cluster.getAssay().getTaxonomyId()));
-        // TODO this is the place for injecting the filtering of multispecies entries
-        if (ConfigurationService.getService().isFilterOutMultitaxonomies()
-                && (clusteredPSMReport != null)
-                && (clusteredPSMReport.getAssay() != null)
-                && (clusteredPSMReport.getAssay().getTaxonomyId() != null)
-                && (clusteredPSMReport.getAssay().getTaxonomyId().split(",").length > 1)) {
-            logger.debug("Filtering out this entry, taxonomy IDs({}), from the final exported dataset", clusteredPSMReport.getAssay().getTaxonomyId());
-            return false;
-        }
         if(specie == null || (clusteredPSMReport.getAssay() != null && clusteredPSMReport.getAssay().getTaxonomyId() != null && clusteredPSMReport.getAssay().getTaxonomyId().contains(specie.getTaxonomy())))
             return true;
         return false;
+    }
+
+    private static boolean filterOutMultitaxonomyClusteredPsmReport(ClusteredPSMReport clusteredPSMReport) {
+        if ((clusteredPSMReport != null)
+                && (clusteredPSMReport.getAssay() != null)
+                && (clusteredPSMReport.getAssay().getTaxonomyId() != null)
+                && (clusteredPSMReport.getAssay().getTaxonomyId().split(",").length > 1)
+                ) {
+            logger.debug("FILETER_OUT_MULTITAXONOMY - Removed CPE entry for peptide '{}', taxonomies ({})",
+                    (clusteredPSMReport.getPeptideForm() != null ? clusteredPSMReport.getPeptideForm().getSequence() : "---N/A---"),
+                    clusteredPSMReport.getAssay().getTaxonomyId());
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -232,7 +256,8 @@ public final class SummaryFactory {
                         List<ClusteredPSMReport> clusters = a.getValue();
                         if(clusters != null && !clusters.isEmpty()){
                             clusters = clusters.parallelStream()
-                                    .filter( (cluster) -> filterClusteredPsmReport(cluster, specie) )
+                                    .filter( (cluster) -> filterClusteredPsmReport(cluster, specie)
+                                            && filterOutMultitaxonomyClusteredPsmReport(cluster) )
                                     .collect(Collectors.toList());
                         }
                         if(clusters != null && !clusters.isEmpty())
