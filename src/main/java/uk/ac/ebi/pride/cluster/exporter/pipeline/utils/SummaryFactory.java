@@ -19,6 +19,10 @@ import uk.ac.ebi.pride.jmztab.model.Modification;
 import uk.ac.ebi.pride.jmztab.model.PSM;
 import uk.ac.ebi.pride.jmztab.model.Param;
 import uk.ac.ebi.pride.jmztab.model.SplitList;
+import uk.ac.ebi.pride.proteogenomics.pogo.model.PoGoEntry;
+import uk.ac.ebi.pride.proteogenomics.pogo.model.PoGoEntryFactory;
+import uk.ac.ebi.pride.proteogenomics.pogo.model.export.PoGoExporterException;
+import uk.ac.ebi.pride.proteogenomics.pogo.model.export.PoGoExporterFactory;
 import uk.ac.ebi.pride.spectracluster.clusteringfilereader.objects.ICluster;
 import uk.ac.ebi.pride.spectracluster.clusteringfilereader.objects.IModification;
 import uk.ac.ebi.pride.spectracluster.clusteringfilereader.objects.IPeptideSpectrumMatch;
@@ -31,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -295,12 +300,14 @@ public final class SummaryFactory {
 
             stream.println();
             if (ConfigurationService.getService().isIncludePogoExport()) {
+                logger.debug("--- Export to PoGo is SET ---");
                 // TODO - I'll put PoGo export in this method, using the same given file name, but changing the file extension to .pogo
                 // TODO - For the PoGo export, we do the same filtering as for printing the CPE entries
                 // TODO - PLEASE, refactor this once the code is working
                 // this code was already pretty awful when I got to touch it, and fixing it would take ages, so I didn't do
                 // it, I just added my patch and that's it
-                Map<PeptideForm, List<ClusteredPSMReport>> pogoDataset = service.getPeptideReportMap().entrySet().stream()
+                logger.debug("Calculating peptide dataset for PoGo export");
+                Map<PeptideForm, List<ClusteredPSMReport>> peptideDataset = service.getPeptideReportMap().entrySet().stream()
                         .filter((a) -> {
                             List<ClusteredPSMReport> clusters = a.getValue();
                             AtomicBoolean filterMultitaxonomy = new AtomicBoolean(false);
@@ -332,13 +339,28 @@ public final class SummaryFactory {
                         ));
                 // And here it goes... another shitty class method... I don't like this but, as I said, the code was in
                 // really bad shape already, when it was handed over to me
-                SummaryFactory.exportPogoData(pogoFilePath, pogoDataset);
+                SummaryFactory.exportPogoData(pogoFilePath, peptideDataset);
             }
         }
     }
 
-    private static void exportPogoData(String pogoFilePath, Map<PeptideForm, List<ClusteredPSMReport>> pogoDataset) {
-        // TODO
+    private static void exportPogoData(String pogoFilePath, Map<PeptideForm, List<ClusteredPSMReport>> peptideDataset) {
+        logger.debug("exportPogoData - Building PoGo entry dataset for exporting, destination file '{}'", pogoFilePath);
+        List<PoGoEntry> poGoEntries = new CopyOnWriteArrayList<>();
+        peptideDataset
+                .values()
+                .parallelStream()
+                .map(value -> value.parallelStream()
+                        .map(clusteredPsmReport -> poGoEntries.add(PoGoEntryFactory.createPoGoEntryFrom(clusteredPsmReport))));
+        logger.debug("exportPogoData - PoGo entry dataset built, it contains #{} entries, destination file '{}'",
+                poGoEntries.size(),
+                pogoFilePath);
+        try {
+            PoGoExporterFactory.getTabularFileExporter(pogoFilePath).export(poGoEntries);
+            logger.debug("exportPogoData - DONE, destination file '{}'", pogoFilePath);
+        } catch (PoGoExporterException e) {
+            logger.error("exportPogoData - ERROR - destination file '{}', ERROR ---> '{}'", pogoFilePath, e.getMessage());
+        }
     }
 
     private static Object summariseProjects(Set<String> projects) {
