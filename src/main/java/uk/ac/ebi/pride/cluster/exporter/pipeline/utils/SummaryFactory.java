@@ -136,6 +136,7 @@ public final class SummaryFactory {
             // This is the real injection point for the multitaxonomy filter
             if (ConfigurationService.getService().isFilterOutMultitaxonomies()
                     && taxonomies.size() > 1) {
+                // TODO - This filter should also be applied before calling this method, as it is not its responsibility to filter the data, but just printing it
                 // When active, this filter removes those entries in the "PEP" table whose collapsed clustering
                 // information presents several taxonomies
                 logger.debug("FILTER_OUT_MULTITAXONOMIES ---> {}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
