@@ -13,6 +13,7 @@ public class ConfigurationService {
     private static ConfigurationService instance = new ConfigurationService();
 
     private boolean filterOutMultitaxonomies = false;
+    private boolean includePogoExport = false;
 
     protected ConfigurationService() {}
 
@@ -31,5 +32,17 @@ public class ConfigurationService {
 
     public boolean isFilterOutMultitaxonomies() {
         return filterOutMultitaxonomies;
+    }
+
+    public void setIncludePogoExport() {
+        includePogoExport = true;
+    }
+
+    public void unsetIncludePogoExport() {
+        includePogoExport = false;
+    }
+
+    public boolean isIncludePogoExport() {
+        return includePogoExport;
     }
 }
