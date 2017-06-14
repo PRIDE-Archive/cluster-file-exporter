@@ -189,6 +189,7 @@ public final class SummaryFactory {
                 ));
 
         if (filterMultitaxonomy.get()) {
+            // TODO - to be honest, this filter should be implemented outside this method, and applied before calling it, as this method's sole responsibility should be printing the entry
             String sequence = "---N/A---";
             if ((collect != null) && (!collect.isEmpty()) && (collect.first() != null) && (collect.first().getSequence() != null)) {
                 sequence = collect.first().getSequence();
