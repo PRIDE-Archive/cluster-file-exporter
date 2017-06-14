@@ -250,7 +250,6 @@ public final class SummaryFactory {
      * @param properties The properties to be use to generate the file
      */
     public static void printFile(ClusterRepositoryServices service, Specie specie, String path, Properties properties, String version) throws FileNotFoundException {
-
         String filePath = (specie == null)? path + File.separator + properties.getProperty("file.name.title")+"_ALL.tsv":
                 path + File.separator + properties.getProperty("file.name.title")+"_" + specie.getName()+".tsv";
 
@@ -293,6 +292,7 @@ public final class SummaryFactory {
                     .forEach(e -> SummaryFactory.printClusterPeptideEntry(stream, e, properties));
 
             stream.println();
+            // TODO - I'll put PoGo export in this method, using the same given file name, but changing the file extension to .pogo
 
         }
     }
