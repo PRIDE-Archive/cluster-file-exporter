@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.cluster.exporter.pipeline.utils;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
@@ -252,6 +253,7 @@ public final class SummaryFactory {
     public static void printFile(ClusterRepositoryServices service, Specie specie, String path, Properties properties, String version) throws FileNotFoundException {
         String filePath = (specie == null)? path + File.separator + properties.getProperty("file.name.title")+"_ALL.tsv":
                 path + File.separator + properties.getProperty("file.name.title")+"_" + specie.getName()+".tsv";
+        String pogoFilePath = FilenameUtils.removeExtension(filePath) + ".pogo";
 
         if(service != null){
 
@@ -292,9 +294,51 @@ public final class SummaryFactory {
                     .forEach(e -> SummaryFactory.printClusterPeptideEntry(stream, e, properties));
 
             stream.println();
-            // TODO - I'll put PoGo export in this method, using the same given file name, but changing the file extension to .pogo
-
+            if (ConfigurationService.getService().isIncludePogoExport()) {
+                // TODO - I'll put PoGo export in this method, using the same given file name, but changing the file extension to .pogo
+                // TODO - For the PoGo export, we do the same filtering as for printing the CPE entries
+                // TODO - PLEASE, refactor this once the code is working
+                // this code was already pretty awful when I got to touch it, and fixing it would take ages, so I didn't do
+                // it, I just added my patch and that's it
+                Map<PeptideForm, List<ClusteredPSMReport>> pogoDataset = service.getPeptideReportMap().entrySet().stream()
+                        .filter((a) -> {
+                            List<ClusteredPSMReport> clusters = a.getValue();
+                            AtomicBoolean filterMultitaxonomy = new AtomicBoolean(false);
+                            if (clusters != null && !clusters.isEmpty()) {
+                                clusters = clusters.parallelStream()
+                                        .filter((cluster) -> filterClusteredPsmReport(cluster, specie))
+                                        .filter(cluster -> {
+                                            if (filterMultitaxonomyClusteredPsmReport(cluster)) {
+                                                filterMultitaxonomy.set(true);
+                                                // Filter it out of the output dataset
+                                                return false;
+                                            }
+                                            // Filter it in, in the output dataset
+                                            return true;
+                                        })
+                                        .collect(Collectors.toList());
+                            }
+                            if (filterMultitaxonomy.get()) {
+                                // It means the filtering on multitaxonomies is ON, and this entry is possitive
+                                return false;
+                            }
+                            if (clusters != null && !clusters.isEmpty())
+                                return true;
+                            return false;
+                        })
+                        .collect(Collectors.toMap(
+                                entry -> entry.getKey(),
+                                entry -> entry.getValue()
+                        ));
+                // And here it goes... another shitty class method... I don't like this but, as I said, the code was in
+                // really bad shape already, when it was handed over to me
+                SummaryFactory.exportPogoData(pogoFilePath, pogoDataset);
+            }
         }
+    }
+
+    private static void exportPogoData(String pogoFilePath, Map<PeptideForm, List<ClusteredPSMReport>> pogoDataset) {
+        // TODO
     }
 
     private static Object summariseProjects(Set<String> projects) {
