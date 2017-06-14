@@ -67,6 +67,10 @@ public class ClusteringFileExporter {
                 ConfigurationService.getService().setFilterOutMultitaxonomies();
             }
 
+            if (commandLine.hasOption(CliOptions.OPTIONS.INCLUDE_POGO_EXPORT.getValue())) {
+                ConfigurationService.getService().setIncludePogoExport();
+            }
+
             if (!file.exists())
                 logger.info("Output .tsv file must be will be re-write with new data");
 
