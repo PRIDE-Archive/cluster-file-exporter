@@ -18,6 +18,8 @@ public class CliOptions {
 
         FILTER_OUT_MULTITAXONOMIES("filter_out_multitaxonomies"),
 
+        INCLUDE_POGO_EXPORT("include_pogo_export"),
+
         // ACTIONS
         HELP("help");
 
@@ -66,6 +68,11 @@ public class CliOptions {
                 .withDescription("Filter, remove multitaxonomy entries from the summary file")
                 .create(OPTIONS.FILTER_OUT_MULTITAXONOMIES.getValue());
         options.addOption(filter_out_multitaxonomies);
+
+        Option include_pogo_export = OptionBuilder
+                .withDescription("Include PoGo formatted export for the dataset, this will produce, for each data output file, another .pogo file")
+                .create(OPTIONS.INCLUDE_POGO_EXPORT.getValue());
+        options.addOption(include_pogo_export);
 
         // ACTIONS
         Option help = new Option(
