@@ -36,6 +36,8 @@
         <uk.ac.ebi.pride.architectural-pride-logging.version>1.0.0</uk.ac.ebi.pride.architectural-pride-logging.version>
         <!-- TDD -->
         <uk.ac.ebi.pride.architectural-pride-tdd.version>1.0.3</uk.ac.ebi.pride.architectural-pride-tdd.version>
+        <uk.ac.ebi.pride.proteogenomics.pogo-libpogo.version>1.0-SNAPSHOT</uk.ac.ebi.pride.proteogenomics.pogo-libpogo.version>
+        <uk.ac.ebi.pride.utilities-pride-mod.version>2.1.5-SNAPSHOT</uk.ac.ebi.pride.utilities-pride-mod.version>
 
         <project.build.finalName>${project.artifactId}-${project.version}</project.build.finalName>
         <junit.version>4.11</junit.version>
@@ -54,7 +56,6 @@
         <spectra-cluster.version>1.0.6-SNAPSHOT</spectra-cluster.version>
         <archive-data-provider-api.version>2.0.5</archive-data-provider-api.version>
         <spectra-cluster-repo.version>1.0.5</spectra-cluster-repo.version>
-        <pride-mod.version>2.1.3-SNAPSHOT</pride-mod.version>
     </properties>
 
     <dependencies>
@@ -150,7 +151,13 @@
         <dependency>
             <groupId>uk.ac.ebi.pride.utilities</groupId>
             <artifactId>pride-mod</artifactId>
-            <version>2.1.3</version>
+            <version>${uk.ac.ebi.pride.utilities-pride-mod.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>uk.ac.ebi.pride.proteogenomics.pogo</groupId>
+            <artifactId>libpogo</artifactId>
+            <version>${uk.ac.ebi.pride.proteogenomics.pogo-libpogo.version}</version>
         </dependency>
 
     </dependencies>
