@@ -339,6 +339,7 @@ public final class SummaryFactory {
                 .parallelStream()
                 .map(value -> value.parallelStream()
                         .map(clusteredPsmReport -> poGoEntries.add(PoGoEntryFactory.createPoGoEntryFrom(clusteredPsmReport))));*/
+        // TODO - This is not implemented as a lambda because the original lambda implementation was not working at all
         for (PeptideForm key :
                 peptideDataset.keySet()) {
             /*logger.debug("exportPogoData ---> Generating PoGo entries for sequence '{}' with #{} clustered psm reports",
