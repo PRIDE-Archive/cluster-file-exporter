@@ -331,9 +331,9 @@ public final class SummaryFactory {
                         .map(clusteredPsmReport -> poGoEntries.add(PoGoEntryFactory.createPoGoEntryFrom(clusteredPsmReport))));*/
         for (PeptideForm key :
                 peptideDataset.keySet()) {
-            logger.debug("exportPogoData ---> Generating PoGo entries for sequence '{}' with #{} clustered psm reports",
+            /*logger.debug("exportPogoData ---> Generating PoGo entries for sequence '{}' with #{} clustered psm reports",
                     key.getSequence(),
-                    (peptideDataset.get(key) != null ? peptideDataset.get(key).size() : "null"));
+                    (peptideDataset.get(key) != null ? peptideDataset.get(key).size() : "null"));*/
             if (peptideDataset.get(key) != null) {
                 for (ClusteredPSMReport clusteredPSMReport :
                         peptideDataset.get(key)
