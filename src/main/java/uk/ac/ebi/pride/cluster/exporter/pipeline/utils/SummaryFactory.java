@@ -37,6 +37,7 @@ import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -145,7 +146,7 @@ public final class SummaryFactory {
                 // TODO - This filter should also be applied before calling this method, as it is not its responsibility to filter the data, but just printing it
                 // When active, this filter removes those entries in the "PEP" table whose collapsed clustering
                 // information presents several taxonomies
-                logger.debug("FILTER_OUT_MULTITAXONOMIES ---> {}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                /*logger.debug("FILTER_OUT_MULTITAXONOMIES ---> {}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                         properties.getProperty("peptide.start.header"),
                         peptide.getSequence(),
                         printValue(summariseMoficiation(peptide.getModifications())),
@@ -156,7 +157,7 @@ public final class SummaryFactory {
                         printValue(collect.size()),
                         printValue(summariseSpecie(taxonomies)),
                         printValue(summariseProjects(projects))
-                );
+                );*/
             } else {
                 stream.print(properties.getProperty("peptide.start.header") + TAB_SEP);
                 stream.print(peptide.getSequence() + TAB_SEP);
@@ -201,10 +202,10 @@ public final class SummaryFactory {
             if ((collect != null) && (!collect.isEmpty()) && (collect.first() != null) && (collect.first().getSequence() != null)) {
                 sequence = collect.first().getSequence();
             }
-            logger.debug("FILTER_OUT_MULTITAXONOMIES ---> {} {} With multiple taxonomies",
+            /*logger.debug("FILTER_OUT_MULTITAXONOMIES ---> {} {} With multiple taxonomies",
                     properties.getProperty("cluster.peptide.start.header"),
                     sequence
-            );
+            );*/
         } else {
             for(ClusteredPSMReport object: collect){
                 stream.print(properties.getProperty("cluster.peptide.start.header")+TAB_SEP);
@@ -306,52 +307,39 @@ public final class SummaryFactory {
                 // TODO - PLEASE, refactor this once the code is working
                 // this code was already pretty awful when I got to touch it, and fixing it would take ages, so I didn't do
                 // it, I just added my patch and that's it
-                logger.debug("Calculating peptide dataset for PoGo export");
-                Map<PeptideForm, List<ClusteredPSMReport>> peptideDataset = service.getPeptideReportMap().entrySet().stream()
-                        .filter((a) -> {
-                            List<ClusteredPSMReport> clusters = a.getValue();
-                            AtomicBoolean filterMultitaxonomy = new AtomicBoolean(false);
-                            if (clusters != null && !clusters.isEmpty()) {
-                                clusters = clusters.parallelStream()
-                                        .filter((cluster) -> filterClusteredPsmReport(cluster, specie))
-                                        .filter(cluster -> {
-                                            if (filterMultitaxonomyClusteredPsmReport(cluster)) {
-                                                filterMultitaxonomy.set(true);
-                                                // Filter it out of the output dataset
-                                                return false;
-                                            }
-                                            // Filter it in, in the output dataset
-                                            return true;
-                                        })
-                                        .collect(Collectors.toList());
-                            }
-                            if (filterMultitaxonomy.get()) {
-                                // It means the filtering on multitaxonomies is ON, and this entry is possitive
-                                return false;
-                            }
-                            if (clusters != null && !clusters.isEmpty())
-                                return true;
-                            return false;
-                        })
-                        .collect(Collectors.toMap(
-                                entry -> entry.getKey(),
-                                entry -> entry.getValue()
-                        ));
-                // And here it goes... another shitty class method... I don't like this but, as I said, the code was in
-                // really bad shape already, when it was handed over to me
+                logger.debug("[PoGo] Calculating peptide dataset for PoGo export, #{} peptide report map entries",
+                        service.getPeptideReportMap().size());
+                Map<PeptideForm, List<ClusteredPSMReport>> peptideDataset = service.getPeptideReportMap();
+                logger.debug("Peptide dataset has #{} entries", peptideDataset.size());
                 SummaryFactory.exportPogoData(pogoFilePath, peptideDataset);
             }
         }
     }
 
     private static void exportPogoData(String pogoFilePath, Map<PeptideForm, List<ClusteredPSMReport>> peptideDataset) {
-        logger.debug("exportPogoData - Building PoGo entry dataset for exporting, destination file '{}'", pogoFilePath);
-        List<PoGoEntry> poGoEntries = new CopyOnWriteArrayList<>();
-        peptideDataset
+        logger.debug("exportPogoData - Building PoGo entry dataset for exporting, peptide dataset contains #{} entries, destination file '{}'",
+                peptideDataset.size(),
+                pogoFilePath);
+        List<PoGoEntry> poGoEntries = new ArrayList<>(); //new CopyOnWriteArrayList<>();
+        // Changing this lambda that is not working, fuck you Java 8!
+        /*peptideDataset
                 .values()
                 .parallelStream()
                 .map(value -> value.parallelStream()
-                        .map(clusteredPsmReport -> poGoEntries.add(PoGoEntryFactory.createPoGoEntryFrom(clusteredPsmReport))));
+                        .map(clusteredPsmReport -> poGoEntries.add(PoGoEntryFactory.createPoGoEntryFrom(clusteredPsmReport))));*/
+        for (PeptideForm key :
+                peptideDataset.keySet()) {
+            logger.debug("exportPogoData ---> Generating PoGo entries for sequence '{}' with #{} clustered psm reports",
+                    key.getSequence(),
+                    (peptideDataset.get(key) != null ? peptideDataset.get(key).size() : "null"));
+            if (peptideDataset.get(key) != null) {
+                for (ClusteredPSMReport clusteredPSMReport :
+                        peptideDataset.get(key)
+                     ) {
+                    poGoEntries.add(PoGoEntryFactory.createPoGoEntryFrom(clusteredPSMReport));
+                }
+            }
+        }
         logger.debug("exportPogoData - PoGo entry dataset built, it contains #{} entries, destination file '{}'",
                 poGoEntries.size(),
                 pogoFilePath);
