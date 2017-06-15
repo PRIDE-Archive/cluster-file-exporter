@@ -311,6 +311,17 @@ public final class SummaryFactory {
                         service.getPeptideReportMap().size());
                 Map<PeptideForm, List<ClusteredPSMReport>> peptideDataset =
                         service.getPeptideReportMap().entrySet().stream()
+                                .filter((a) -> {
+                                    List<ClusteredPSMReport> clusters = a.getValue();
+                                    if(clusters != null && !clusters.isEmpty()){
+                                        clusters = clusters.parallelStream()
+                                                .filter( (cluster) -> filterClusteredPsmReport(cluster, specie) )
+                                                .collect(Collectors.toList());
+                                    }
+                                    if(clusters != null && !clusters.isEmpty())
+                                        return true;
+                                    return false;
+                                })
                                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                 logger.debug("Peptide dataset has #{} entries", peptideDataset.size());
                 SummaryFactory.exportPogoData(pogoFilePath, peptideDataset);
