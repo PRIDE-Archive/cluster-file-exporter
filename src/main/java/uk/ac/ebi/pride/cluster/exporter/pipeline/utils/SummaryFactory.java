@@ -35,9 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 /**
@@ -184,7 +182,7 @@ public final class SummaryFactory {
                 .filter(c -> c.getRank() <= filter)
                 .filter(c -> c.getPsmRatio() > filterScore)
                 .filter(c -> {
-                    if (filterMultitaxonomyClusteredPsmReport(c)) {
+                    if (isMultitaxonomyClusteredPsmReport(c)) {
                         filterMultitaxonomy.set(true);
                         // Filter it out of the output dataset
                         return false;
@@ -237,7 +235,7 @@ public final class SummaryFactory {
      * @param clusteredPSMReport clustered PSM report to test against the filter
      * @return true when the given report matches the criteria, false otherwise
      */
-    private static boolean filterMultitaxonomyClusteredPsmReport(ClusteredPSMReport clusteredPSMReport) {
+    private static boolean isMultitaxonomyClusteredPsmReport(ClusteredPSMReport clusteredPSMReport) {
         if ((clusteredPSMReport != null)
                 && (clusteredPSMReport.getAssay() != null)
                 && (clusteredPSMReport.getAssay().getTaxonomyId() != null)
@@ -316,6 +314,7 @@ public final class SummaryFactory {
                                     if(clusters != null && !clusters.isEmpty()){
                                         clusters = clusters.parallelStream()
                                                 .filter( (cluster) -> filterClusteredPsmReport(cluster, specie) )
+                                                .filter( cluster -> !isMultitaxonomyClusteredPsmReport(cluster))
                                                 .collect(Collectors.toList());
                                     }
                                     if(clusters != null && !clusters.isEmpty())
