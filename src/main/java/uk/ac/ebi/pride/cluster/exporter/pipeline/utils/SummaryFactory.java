@@ -309,7 +309,9 @@ public final class SummaryFactory {
                 // it, I just added my patch and that's it
                 logger.debug("[PoGo] Calculating peptide dataset for PoGo export, #{} peptide report map entries",
                         service.getPeptideReportMap().size());
-                Map<PeptideForm, List<ClusteredPSMReport>> peptideDataset = service.getPeptideReportMap();
+                Map<PeptideForm, List<ClusteredPSMReport>> peptideDataset =
+                        service.getPeptideReportMap().entrySet().stream()
+                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                 logger.debug("Peptide dataset has #{} entries", peptideDataset.size());
                 SummaryFactory.exportPogoData(pogoFilePath, peptideDataset);
             }
