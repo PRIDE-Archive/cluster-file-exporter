@@ -36,17 +36,28 @@ public class PoGoEntryVisitorForClusteredPsmReport implements PoGoEntryVisitor {
             for (ModificationProvider modification
                     : clusteredPSMReport.getModifications()
                     ) {
-                PRIDEModPTM prideModPTM = ModReader.getInstance().getPRIDEModByAccessionAndAmminoAcid(modification.getAccession(),
-                        String.valueOf(clusteredPSMReport.getSequence().charAt(modification.getMainPosition() - 1)));
-                String modificationShortName = "any_other_ptm";
-                if ((prideModPTM != null)
-                        && prideModPTM.isBiologicalRelevant()) {
-                    modificationShortName = prideModPTM.getShortName();
+                if ((modification.getMainPosition() == 0)
+                        || (modification.getMainPosition() > clusteredPSMReport.getSequence().length())) {
+                    // TODO - These kind of modificaitons are not handled by PoGo, but they may be biologically relevant
+                    logger.warn("EXCLUDING MODIFICAION '{}', for peptide '{}', main position '{}'",
+                            modification.getAccession(),
+                            clusteredPSMReport.getSequence(),
+                            modification.getMainPosition());
+                } else {
+                    PRIDEModPTM prideModPTM =
+                            ModReader.getInstance()
+                                    .getPRIDEModByAccessionAndAmminoAcid(modification.getAccession(),
+                                            String.valueOf(clusteredPSMReport.getSequence().charAt(modification.getMainPosition() - 1)));
+                    String modificationShortName = "any_other_ptm";
+                    if ((prideModPTM != null)
+                            && prideModPTM.isBiologicalRelevant()) {
+                        modificationShortName = prideModPTM.getShortName();
+                    }
+                    if (modificationsMap.get(modification.getMainPosition()) == null) {
+                        modificationsMap.put(modification.getMainPosition(), new ArrayList<>());
+                    }
+                    modificationsMap.get(modification.getMainPosition()).add(modificationShortName);
                 }
-                if (modificationsMap.get(modification.getMainPosition()) == null) {
-                    modificationsMap.put(modification.getMainPosition(), new ArrayList<>());
-                }
-                modificationsMap.get(modification.getMainPosition()).add(modificationShortName);
             }
         }
         // Embed modifications by position in the sequence
