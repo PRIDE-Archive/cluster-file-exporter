@@ -49,7 +49,7 @@ public class PoGoEntryVisitorForClusteredPsmReport implements PoGoEntryVisitor {
                 }
                 if ((modificationMainPosition < 1)
                         || (modificationMainPosition > clusteredPSMReport.getSequence().length())) {
-                    // TODO - These kind of modificaitons are not handled by PoGo, but they may be biologically relevant
+                    // TODO - These kind of modifications are not handled by PoGo, but they may be biologically relevant
                     logger.warn("EXCLUDING MODIFICAION '{}', for peptide '{}', main position '{}'",
                             modificationAccession,
                             clusteredPSMReport.getSequence(),
