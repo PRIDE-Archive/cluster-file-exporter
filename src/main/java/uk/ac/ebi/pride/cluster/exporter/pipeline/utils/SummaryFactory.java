@@ -13,6 +13,7 @@ import uk.ac.ebi.pride.archive.repo.project.Project;
 import uk.ac.ebi.pride.archive.repo.project.ProjectTag;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.exporter.ConfigurationService;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.model.Specie;
+import uk.ac.ebi.pride.cluster.exporter.pipeline.pogo.visitors.PoGoEntryVisitorForClusteredPsmReport;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.quality.IClusterQualityDecider;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.services.ClusterRepositoryServices;
 import uk.ac.ebi.pride.jmztab.model.Modification;
@@ -349,7 +350,8 @@ public final class SummaryFactory {
                 for (ClusteredPSMReport clusteredPSMReport :
                         peptideDataset.get(key)
                      ) {
-                    poGoEntries.add(PoGoEntryFactory.createPoGoEntryFrom(clusteredPSMReport));
+                    poGoEntries.add(PoGoEntryFactory
+                            .createPoGoEntryWithStrategy(new PoGoEntryVisitorForClusteredPsmReport(clusteredPSMReport)));
                 }
             }
         }
