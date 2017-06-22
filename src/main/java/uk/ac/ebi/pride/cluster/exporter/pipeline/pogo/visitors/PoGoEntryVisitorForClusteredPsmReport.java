@@ -36,27 +36,38 @@ public class PoGoEntryVisitorForClusteredPsmReport implements PoGoEntryVisitor {
             for (ModificationProvider modification
                     : clusteredPSMReport.getModifications()
                     ) {
-                if ((modification.getMainPosition() == 0)
-                        || (modification.getMainPosition() > clusteredPSMReport.getSequence().length())) {
+                if (modification.getMainPosition() == null) {
+                    logger.error("Main position is 'null' for peptide '{}'", clusteredPSMReport.getSequence());
+                    continue;
+                }
+                int modificationMainPosition = modification.getMainPosition();
+                String modificationAccession = "null";
+                if (modification.getAccession() == null) {
+                    logger.error("Modification Accession is 'null' for peptide '{}'", clusteredPSMReport.getSequence());
+                } else {
+                    modificationAccession = modification.getAccession();
+                }
+                if ((modificationMainPosition < 1)
+                        || (modificationMainPosition > clusteredPSMReport.getSequence().length())) {
                     // TODO - These kind of modificaitons are not handled by PoGo, but they may be biologically relevant
                     logger.warn("EXCLUDING MODIFICAION '{}', for peptide '{}', main position '{}'",
-                            modification.getAccession(),
+                            modificationAccession,
                             clusteredPSMReport.getSequence(),
-                            modification.getMainPosition());
+                            modificationMainPosition);
                 } else {
                     PRIDEModPTM prideModPTM =
                             ModReader.getInstance()
-                                    .getPRIDEModByAccessionAndAmminoAcid(modification.getAccession(),
+                                    .getPRIDEModByAccessionAndAmminoAcid(modificationAccession,
                                             String.valueOf(clusteredPSMReport.getSequence().charAt(modification.getMainPosition() - 1)));
                     String modificationShortName = "any_other_ptm";
                     if ((prideModPTM != null)
                             && prideModPTM.isBiologicalRelevant()) {
                         modificationShortName = prideModPTM.getShortName();
                     }
-                    if (modificationsMap.get(modification.getMainPosition()) == null) {
-                        modificationsMap.put(modification.getMainPosition(), new ArrayList<>());
+                    if (modificationsMap.get(modificationMainPosition) == null) {
+                        modificationsMap.put(modificationMainPosition, new ArrayList<>());
                     }
-                    modificationsMap.get(modification.getMainPosition()).add(modificationShortName);
+                    modificationsMap.get(modificationMainPosition).add(modificationShortName);
                 }
             }
         }
