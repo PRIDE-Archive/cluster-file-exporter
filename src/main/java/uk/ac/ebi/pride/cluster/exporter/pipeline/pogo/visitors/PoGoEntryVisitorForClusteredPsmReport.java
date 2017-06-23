@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
 import uk.ac.ebi.pride.proteogenomics.pogo.model.PoGoEntry;
 import uk.ac.ebi.pride.proteogenomics.pogo.model.PoGoEntryVisitor;
+import uk.ac.ebi.pride.proteogenomics.pogo.model.PoGoEntryVisitorException;
 import uk.ac.ebi.pride.spectracluster.repo.model.ClusteredPSMReport;
 import uk.ac.ebi.pride.utilities.pridemod.ModReader;
 import uk.ac.ebi.pride.utilities.pridemod.model.PRIDEModPTM;
@@ -37,13 +38,6 @@ public class PoGoEntryVisitorForClusteredPsmReport implements PoGoEntryVisitor {
                     : clusteredPSMReport.getModifications()
                     ) {
                 String clusterId = clusteredPSMReport.getClusterId() == null ? "-null_cluster_ID-" : clusteredPSMReport.getClusterId().toString();
-                if (modification.getMainPosition() == null) {
-                    logger.error("Main position is 'null' for peptide '{}', cluster ID '{}'",
-                            clusteredPSMReport.getSequence(),
-                            clusterId);
-                    continue;
-                }
-                int modificationMainPosition = modification.getMainPosition();
                 String modificationAccession = "null";
                 if (modification.getAccession() == null) {
                     logger.error("Modification Accession is 'null' for peptide '{}', cluster ID '{}'",
@@ -52,6 +46,14 @@ public class PoGoEntryVisitorForClusteredPsmReport implements PoGoEntryVisitor {
                 } else {
                     modificationAccession = modification.getAccession();
                 }
+                if (modification.getMainPosition() == null) {
+                    logger.error("Main position is 'null', modification'{}', for peptide '{}', cluster ID '{}'",
+                            clusteredPSMReport.getSequence(),
+                            modificationAccession,
+                            clusterId);
+                    continue;
+                }
+                int modificationMainPosition = modification.getMainPosition();
                 if ((modificationMainPosition < 1)
                         || (modificationMainPosition > clusteredPSMReport.getSequence().length())) {
                     // TODO - These kind of modifications are not handled by PoGo, but they may be biologically relevant
@@ -102,9 +104,12 @@ public class PoGoEntryVisitorForClusteredPsmReport implements PoGoEntryVisitor {
     public PoGoEntry visit(PoGoEntry poGoEntry) {
         if (clusteredPSMReport != null) {
             poGoEntry.setExperiment("---no_cluster_id_available---");
-            if (clusteredPSMReport.getClusterId() != null) {
-                poGoEntry.setExperiment(clusteredPSMReport.getClusterId().toString());
+            if (clusteredPSMReport.getClusterId() == null) {
+                String msg = String.format("CLUSTER ID IS NULL, Sequence (%s)",
+                        clusteredPSMReport.getSequence());
+                throw new PoGoEntryVisitorException(msg);
             }
+            poGoEntry.setExperiment(clusteredPSMReport.getClusterId().toString());
             poGoEntry.setPeptide(translateSequence());
             poGoEntry.setPsm(clusteredPSMReport.getClusterNumberPSMs());
             // TODO - This parameter will be let as zero right now, in the future we need to work out a way to leave as it is right now, or compute its value
