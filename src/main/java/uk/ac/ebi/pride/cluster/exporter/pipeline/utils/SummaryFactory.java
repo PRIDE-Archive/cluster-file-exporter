@@ -258,7 +258,7 @@ public final class SummaryFactory {
     public static void printFile(ClusterRepositoryServices service, Specie specie, String path, Properties properties, String version) throws FileNotFoundException {
         String filePath = (specie == null)? path + File.separator + properties.getProperty("file.name.title")+"_ALL.tsv":
                 path + File.separator + properties.getProperty("file.name.title")+"_" + specie.getName()+".tsv";
-        String pogoFilePath = FilenameUtils.removeExtension(filePath) + ".pogo";
+        String pogoFilePath = FilenameUtils.removeExtension(filePath) + ".pogo.txt";
 
         if(service != null){
 
