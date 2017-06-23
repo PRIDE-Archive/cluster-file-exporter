@@ -36,14 +36,19 @@ public class PoGoEntryVisitorForClusteredPsmReport implements PoGoEntryVisitor {
             for (ModificationProvider modification
                     : clusteredPSMReport.getModifications()
                     ) {
+                String clusterId = clusteredPSMReport.getClusterId() == null ? "-null_cluster_ID-" : clusteredPSMReport.getClusterId().toString();
                 if (modification.getMainPosition() == null) {
-                    logger.error("Main position is 'null' for peptide '{}'", clusteredPSMReport.getSequence());
+                    logger.error("Main position is 'null' for peptide '{}', cluster ID '{}'",
+                            clusteredPSMReport.getSequence(),
+                            clusterId);
                     continue;
                 }
                 int modificationMainPosition = modification.getMainPosition();
                 String modificationAccession = "null";
                 if (modification.getAccession() == null) {
-                    logger.error("Modification Accession is 'null' for peptide '{}'", clusteredPSMReport.getSequence());
+                    logger.error("Modification Accession is 'null' for peptide '{}', cluster ID '{}'",
+                            clusteredPSMReport.getSequence(),
+                            clusterId);
                 } else {
                     modificationAccession = modification.getAccession();
                 }
@@ -59,7 +64,7 @@ public class PoGoEntryVisitorForClusteredPsmReport implements PoGoEntryVisitor {
                             ModReader.getInstance()
                                     .getPRIDEModByAccessionAndAmminoAcid(modificationAccession,
                                             String.valueOf(clusteredPSMReport.getSequence().charAt(modification.getMainPosition() - 1)));
-                    String modificationShortName = "any_other_ptm";
+                    String modificationShortName = modificationAccession;
                     if ((prideModPTM != null)
                             && prideModPTM.isBiologicalRelevant()) {
                         modificationShortName = prideModPTM.getShortName();
