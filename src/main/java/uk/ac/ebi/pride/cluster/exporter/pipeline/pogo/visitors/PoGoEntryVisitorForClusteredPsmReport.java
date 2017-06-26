@@ -109,7 +109,9 @@ public class PoGoEntryVisitorForClusteredPsmReport implements PoGoEntryVisitor {
                         clusteredPSMReport.getSequence());
                 throw new PoGoEntryVisitorException(msg);
             }
-            poGoEntry.setExperiment(clusteredPSMReport.getClusterId().toString());
+            poGoEntry.setExperiment(String.format("<a href='https://www.ebi.ac.uk/pride/cluster/#/id/%s'>Cluster ID %s</a>",
+                    clusteredPSMReport.getClusterId().toString(),
+                    clusteredPSMReport.getClusterId().toString()));
             poGoEntry.setPeptide(translateSequence());
             poGoEntry.setPsm(clusteredPSMReport.getClusterNumberPSMs());
             // TODO - This parameter will be left as zero right now, in the future we need to work out a way to leave as it is right now, or compute its value
