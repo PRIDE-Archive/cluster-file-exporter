@@ -5,13 +5,10 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.utils.Constants;
 import uk.ac.ebi.pride.cluster.exporter.pipeline.utils.ModificationMapper;
-import uk.ac.ebi.pride.cluster.exporter.pipeline.utils.PropertyUtils;
 import uk.ac.ebi.pride.spectracluster.repo.dao.cluster.IClusterReadDao;
 import uk.ac.ebi.pride.spectracluster.repo.model.*;
-import uk.ac.ebi.pride.spectracluster.repo.utils.ModificationDetailFetcher;
 
 
-import java.io.InputStream;
 import java.lang.Long;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -173,6 +170,7 @@ public class ClusterRepositoryServices {
                 return psm;
             }).collect(Collectors.toList());
 
+            // This groups the data using the clusterId and return a map ClusterID -> PSMReport
             Map<Long, List<ClusteredPSMReport>> map = psmReportList.parallelStream().collect(Collectors.groupingBy(a -> a.getClusterId()));
 
             map.entrySet().parallelStream().forEach(e -> clusterReportMap.merge(e.getKey(), e.getValue(), (v1, v2) -> {

@@ -25,9 +25,9 @@
     <logger name="org.springframework.batch.item" level="ERROR" />
     <logger name="org.springframework.jdbc" level="DEBUG" />
     <logger name="org.springframework.beans" level="ERROR" />
-    <!--<logger name="org.hibernate.param" level="debug" />-->
-    <!--<logger name="org.hibernate.sql" level="debug" />-->
-    <!--<logger name="org.hibernate.cfg" level="debug" />-->
+    <logger name="org.hibernate.param" level="debug" />
+    <logger name="org.hibernate.sql" level="debug" />
+    <logger name="org.hibernate.cfg" level="debug" />
 
     <root level="DEBUG">
         <appender-ref ref="file"/>

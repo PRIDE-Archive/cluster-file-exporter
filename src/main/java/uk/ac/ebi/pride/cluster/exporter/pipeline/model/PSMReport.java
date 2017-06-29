@@ -3,11 +3,9 @@ package uk.ac.ebi.pride.cluster.exporter.pipeline.model;
 import uk.ac.ebi.pride.archive.dataprovider.identification.ModificationProvider;
 import uk.ac.ebi.pride.spectracluster.repo.model.ClusterDetail;
 import uk.ac.ebi.pride.spectracluster.repo.model.ClusteredPSMReport;
-import uk.ac.ebi.pride.spectracluster.repo.model.PSMDetail;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * PSM report can be seen as the peptide+modification in a particular cluster. Different to

@@ -100,7 +100,7 @@ public final class SummaryFactory {
      * This function print a Peptide entry on the Peptide Section including its information
      * @param stream the output file
      * @param peptideReport the peptideReport
-     * @param properties the propeties containing the header of the file
+     * @param properties the properties containing the header of the file
      */
     public static void printPeptideEntry(PrintStream stream, Map.Entry<PeptideForm, List<ClusteredPSMReport>> peptideReport, Properties properties) {
 
@@ -125,16 +125,14 @@ public final class SummaryFactory {
         Set<String> projects   = new TreeSet<>();
 
         for(ClusteredPSMReport object: collect){
-            ClusteredPSMReport cluster =  object;
-            bestRank = (cluster.getRank() < bestRank)?cluster.getRank():bestRank;
-            bestRatio = (cluster.getPsmRatio() > bestRatio)?cluster.getPsmRatio():bestRatio;
-            numSpectra += cluster.getNumberOfSpectra();
-            if(cluster.getAssay() != null && cluster.getAssay().getTaxonomyId() != null){
-                String[] taxonomyArr = cluster.getAssay().getTaxonomyId().split(",");
+            bestRank = (object.getRank() < bestRank)? object.getRank():bestRank;
+            bestRatio = (object.getPsmRatio() > bestRatio)? object.getPsmRatio():bestRatio;
+            numSpectra += object.getNumberOfSpectra();
+            if(object.getAssay() != null && object.getAssay().getTaxonomyId() != null){
+                String[] taxonomyArr = object.getAssay().getTaxonomyId().split(",");
                 taxonomies.addAll(Arrays.asList(taxonomyArr));
             }
-
-            projects.add(cluster.getAssay().getProjectAccession());
+            projects.add(object.getAssay().getProjectAccession());
         }
 
 
@@ -143,21 +141,8 @@ public final class SummaryFactory {
             if (ConfigurationService.getService().isFilterOutMultitaxonomies()
                     && taxonomies.size() > 1) {
                 // TODO - This filter should also be applied before calling this method, as it is not its responsibility to filter the data, but just printing it
-                // When active, this filter removes those entries in the "PEP" table whose collapsed clustering
-                // information presents several taxonomies
-                /*logger.debug("FILTER_OUT_MULTITAXONOMIES ---> {}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-                        properties.getProperty("peptide.start.header"),
-                        peptide.getSequence(),
-                        printValue(summariseMoficiation(peptide.getModifications())),
-                        printValue(bestRank),
-                        printFloat(bestRatio),
-                        printValue(numSpectra),
-                        printValue(projects.size()),
-                        printValue(collect.size()),
-                        printValue(summariseSpecie(taxonomies)),
-                        printValue(summariseProjects(projects))
-                );*/
             } else {
+                logger.debug("Peptide -> " + peptide.getSequence() + " clusters number -> " + collect.size());
                 stream.print(properties.getProperty("peptide.start.header") + TAB_SEP);
                 stream.print(peptide.getSequence() + TAB_SEP);
                 stream.print(printValue(summariseMoficiation(peptide.getModifications())) + TAB_SEP);
@@ -166,8 +151,8 @@ public final class SummaryFactory {
                 stream.print(printValue(numSpectra) + TAB_SEP);
                 stream.print(printValue(projects.size() + TAB_SEP));
                 stream.print(printValue(collect.size()) + TAB_SEP);
-                stream.print(printValue(summariseSpecie(taxonomies)) + TAB_SEP);
-                stream.print(printValue(summariseProjects(projects) + END_LINE));
+                stream.print(printValue(summariseStringValues(taxonomies)) + TAB_SEP);
+                stream.print(printValue(summariseStringValues(projects) + END_LINE));
             }
         }
     }
@@ -201,12 +186,12 @@ public final class SummaryFactory {
             if ((collect != null) && (!collect.isEmpty()) && (collect.first() != null) && (collect.first().getSequence() != null)) {
                 sequence = collect.first().getSequence();
             }
-            /*logger.debug("FILTER_OUT_MULTITAXONOMIES ---> {} {} With multiple taxonomies",
-                    properties.getProperty("cluster.peptide.start.header"),
-                    sequence
-            );*/
         } else {
             for(ClusteredPSMReport object: collect){
+                if(object.getClusterId().toString().equalsIgnoreCase("3247970") || object.getSequence().equalsIgnoreCase("TVLDQQQTPSR")){
+                    System.out.println("The wrong cluster id");
+                }
+                logger.debug("Peptide -> " + object.getSequence() + " Cluster ID -> " + object.getClusterId() + " Rank-> " + object.getRank());
                 stream.print(properties.getProperty("cluster.peptide.start.header")+TAB_SEP);
                 stream.print(object.getClusterId() + TAB_SEP);
                 stream.print(object.getSequence() + TAB_SEP);
@@ -217,16 +202,13 @@ public final class SummaryFactory {
                 stream.print(printValue(object.getClusterNumberSpectra()) + TAB_SEP);
                 stream.print(printValue(object.getClusterNumberProjects() + TAB_SEP));
                 stream.print(printValue(printValue(object.getAssay().getTaxonomyId())) + TAB_SEP);
-    //            stream.print(printValue(printValue(object.isWrongAnnotated())) + TAB_SEP);
                 stream.print(printValue(printValue(object.getAssay().getProjectAccession()) + END_LINE));
             }
         }
     }
 
     private static boolean filterClusteredPsmReport(ClusteredPSMReport clusteredPSMReport, Specie specie) {
-        if(specie == null || (clusteredPSMReport.getAssay() != null && clusteredPSMReport.getAssay().getTaxonomyId() != null && clusteredPSMReport.getAssay().getTaxonomyId().contains(specie.getTaxonomy())))
-            return true;
-        return false;
+        return specie == null || (clusteredPSMReport.getAssay() != null && clusteredPSMReport.getAssay().getTaxonomyId() != null && clusteredPSMReport.getAssay().getTaxonomyId().contains(specie.getTaxonomy()));
     }
 
     /**
@@ -237,14 +219,10 @@ public final class SummaryFactory {
      * @return true when the given report matches the criteria, false otherwise
      */
     private static boolean isMultitaxonomyClusteredPsmReport(ClusteredPSMReport clusteredPSMReport) {
-        if ((clusteredPSMReport != null)
+        return (clusteredPSMReport != null)
                 && (clusteredPSMReport.getAssay() != null)
                 && (clusteredPSMReport.getAssay().getTaxonomyId() != null)
-                && (clusteredPSMReport.getAssay().getTaxonomyId().split(",").length > 1)
-                ) {
-            return true;
-        }
-        return false;
+                && (clusteredPSMReport.getAssay().getTaxonomyId().split(",").length > 1);
     }
 
     /**
@@ -256,15 +234,19 @@ public final class SummaryFactory {
      * @param properties The properties to be use to generate the file
      */
     public static void printFile(ClusterRepositoryServices service, Specie specie, String path, Properties properties, String version) throws FileNotFoundException {
+
         String filePath = (specie == null)? path + File.separator + properties.getProperty("file.name.title")+"_ALL.tsv":
                 path + File.separator + properties.getProperty("file.name.title")+"_" + specie.getName()+".tsv";
-        String pogoFilePath = FilenameUtils.removeExtension(filePath) + ".pogo.txt";
+
+        String pogoFilePath = FilenameUtils.removeExtension(filePath) + ".pogo";
 
         if(service != null){
 
-            PrintStream stream = new PrintStream(new File(filePath));
-            printHeaderFile(stream, properties, version, specie);
-            SummaryFactory.printPeptideHeader(stream, properties);
+            PrintStream peptideReport = new PrintStream(new File(filePath));
+
+            printHeaderFile(peptideReport, properties, version, specie);
+
+            SummaryFactory.printPeptideHeader(peptideReport, properties);
 
             service.getPeptideReportMap().entrySet().stream()
                     .filter((a) -> {
@@ -274,15 +256,13 @@ public final class SummaryFactory {
                                     .filter( (cluster) -> filterClusteredPsmReport(cluster, specie) )
                                     .collect(Collectors.toList());
                         }
-                        if(clusters != null && !clusters.isEmpty())
-                            return true;
-                        return false;
+                        return clusters != null && !clusters.isEmpty();
                     })
-                    .forEach(e -> SummaryFactory.printPeptideEntry(stream, e, properties));
+                    .forEach(e -> SummaryFactory.printPeptideEntry(peptideReport, e, properties));
 
-            stream.println();
+            peptideReport.println();
 
-            SummaryFactory.printClusterPeptideHeader(stream, properties);
+            SummaryFactory.printClusterPeptideHeader(peptideReport, properties);
 
             service.getPeptideReportMap().entrySet().stream()
                     .filter((a) -> {
@@ -292,16 +272,14 @@ public final class SummaryFactory {
                                     .filter( (cluster) -> filterClusteredPsmReport(cluster, specie) )
                                     .collect(Collectors.toList());
                         }
-                        if(clusters != null && !clusters.isEmpty())
-                            return true;
-                        return false;
+                        return clusters != null && !clusters.isEmpty();
                     })
-                    .forEach(e -> SummaryFactory.printClusterPeptideEntry(stream, e, properties));
+                    .forEach(e -> SummaryFactory.printClusterPeptideEntry(peptideReport, e, properties));
 
-            stream.println();
+            peptideReport.println();
+
             if (ConfigurationService.getService().isIncludePogoExport()) {
                 logger.debug("--- Export to PoGo is SET ---");
-                // TODO - I'll put PoGo export in this method, using the same given file name, but changing the file extension to .pogo
                 // TODO - For the PoGo export, we do the same filtering as for printing the CPE entries
                 // TODO - PLEASE, refactor this once the code is working
                 // this code was already pretty awful when I got to touch it, and fixing it would take ages, so I didn't do
@@ -318,41 +296,46 @@ public final class SummaryFactory {
                                                 .filter( cluster -> !isMultitaxonomyClusteredPsmReport(cluster))
                                                 .collect(Collectors.toList());
                                     }
-                                    if(clusters != null && !clusters.isEmpty())
-                                        return true;
-                                    return false;
+                                    return clusters != null && !clusters.isEmpty();
                                 })
                                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
                 logger.debug("Peptide dataset has #{} entries", peptideDataset.size());
-                SummaryFactory.exportPogoData(pogoFilePath, peptideDataset);
+                SummaryFactory.exportPogoData(pogoFilePath, peptideDataset, properties);
             }
         }
     }
 
-    private static void exportPogoData(String pogoFilePath, Map<PeptideForm, List<ClusteredPSMReport>> peptideDataset) {
+    private static void exportPogoData(String pogoFilePath, Map<PeptideForm, List<ClusteredPSMReport>> peptideDataset, Properties properties) {
         logger.debug("exportPogoData - Building PoGo entry dataset for exporting, peptide dataset contains #{} entries, destination file '{}'",
                 peptideDataset.size(),
                 pogoFilePath);
-        List<PoGoEntry> poGoEntries = new ArrayList<>(); //new CopyOnWriteArrayList<>();
-        // Changing this lambda that is not working, fuck you Java 8!
-        /*peptideDataset
-                .values()
-                .parallelStream()
-                .map(value -> value.parallelStream()
-                        .map(clusteredPsmReport -> poGoEntries.add(PoGoEntryFactory.createPoGoEntryFrom(clusteredPsmReport))));*/
+        float filter = Float.parseFloat(properties.getProperty("peptide.rank.filter"));
+        float filterScore = Float.parseFloat(properties.getProperty("peptide.score.filter"));
+        AtomicBoolean filterMultitaxonomy = new AtomicBoolean(false);
+
+        List<PoGoEntry> poGoEntries = new ArrayList<>();
         // TODO - This is not implemented as a lambda because the original lambda implementation was not working at all
-        for (PeptideForm key :
-                peptideDataset.keySet()) {
-            /*logger.debug("exportPogoData ---> Generating PoGo entries for sequence '{}' with #{} clustered psm reports",
-                    key.getSequence(),
-                    (peptideDataset.get(key) != null ? peptideDataset.get(key).size() : "null"));*/
-            if (peptideDataset.get(key) != null) {
-                for (ClusteredPSMReport clusteredPSMReport :
-                        peptideDataset.get(key)
-                     ) {
-                    poGoEntries.add(PoGoEntryFactory
-                            .createPoGoEntryWithStrategy(new PoGoEntryVisitorForClusteredPsmReport(clusteredPSMReport)));
-                }
+        for (PeptideForm key : peptideDataset.keySet()) {
+             if (peptideDataset.get(key) != null) {
+                 List<ClusteredPSMReport> peptideReports = peptideDataset.get(key);
+                 TreeSet<ClusteredPSMReport> peptideReportSet = peptideReports.parallelStream().map(c -> (ClusteredPSMReport) c)
+                         .filter(c -> c.getRank() <= filter)
+                         .filter(c -> c.getPsmRatio() > filterScore)
+                         .filter(c -> {
+                             if (isMultitaxonomyClusteredPsmReport(c)) {filterMultitaxonomy.set(true);
+                                 // Filter it out of the output dataset
+                                 return false;
+                             }
+                             // Filter it in, in the output dataset
+                             return true;
+                         })
+                         .collect(Collectors.toCollection(
+                                 () -> new TreeSet<ClusteredPSMReport>((p1, p2) -> p1.getClusterId().compareTo(p2.getClusterId()))
+                         ));
+
+                 for (ClusteredPSMReport clusteredPSMReport : peptideReportSet) {
+                    poGoEntries.add(PoGoEntryFactory.createPoGoEntryWithStrategy(new PoGoEntryVisitorForClusteredPsmReport(clusteredPSMReport)));
+                 }
             }
         }
         logger.debug("exportPogoData - PoGo entry dataset built, it contains #{} entries, destination file '{}'",
@@ -366,28 +349,16 @@ public final class SummaryFactory {
         }
     }
 
-    private static Object summariseProjects(Set<String> projects) {
-        String projectString = null;
-        if(projects != null){
-            projectString = "";
-            for(String project: projects){
-                projectString = projectString + project + ",";
+    private static Object summariseStringValues(Set<String> values) {
+        String valueString = null;
+        if(values != null){
+            valueString = "";
+            for(String specie: values){
+                valueString = valueString + specie + ",";
             }
-            projectString = removeEndComma(projectString);
+            valueString = removeEndComma(valueString);
         }
-        return projectString;
-    }
-
-    private static Object summariseSpecie(Set<String> species) {
-        String specieString = null;
-        if(species != null){
-            specieString = "";
-            for(String specie: species){
-                specieString = specieString + specie + ",";
-            }
-            specieString = removeEndComma(specieString);
-        }
-        return specieString;
+        return valueString;
     }
 
 

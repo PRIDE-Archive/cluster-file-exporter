@@ -7,7 +7,7 @@ JOB_NAME="FILE-CLUSTER-EXPORTER"
 # the job parameters that are going to be passed on to the job (build below)
 JOB_PARAMETERS=""
 # memory limit
-MEMORY_LIMIT=15000
+MEMORY_LIMIT=40000
 # LSF email notification
 JOB_EMAIL="pride-report@ebi.ac.uk"
 LOG_FILE_NAME="${JOB_NAME}"

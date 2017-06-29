@@ -40,9 +40,7 @@ public class Peptide {
 
         if (modifications != null ? !modifications.equals(peptide.modifications) : peptide.modifications != null)
             return false;
-        if (sequence != null ? !sequence.equals(peptide.sequence) : peptide.sequence != null) return false;
-
-        return true;
+        return sequence != null ? sequence.equals(peptide.sequence) : peptide.sequence == null;
     }
 
     @Override
