@@ -9,6 +9,7 @@ import uk.ac.ebi.pride.proteogenomics.pogo.model.PoGoEntryVisitorException;
 import uk.ac.ebi.pride.spectracluster.repo.model.ClusteredPSMReport;
 import uk.ac.ebi.pride.utilities.pridemod.ModReader;
 import uk.ac.ebi.pride.utilities.pridemod.model.PRIDEModPTM;
+import uk.ac.ebi.pride.utilities.pridemod.model.PTM;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -62,14 +63,18 @@ public class PoGoEntryVisitorForClusteredPsmReport implements PoGoEntryVisitor {
                             clusteredPSMReport.getSequence(),
                             modificationMainPosition);
                 } else {
-                    PRIDEModPTM prideModPTM =
-                            ModReader.getInstance()
-                                    .getPRIDEModByAccessionAndAmminoAcid(modificationAccession,
-                                            String.valueOf(clusteredPSMReport.getSequence().charAt(modification.getMainPosition() - 1)));
+
+                    PRIDEModPTM prideModPTM = ModReader.getInstance().getPRIDEModByAccessionAndAmminoAcid(modificationAccession, String.valueOf(clusteredPSMReport.getSequence().charAt(modification.getMainPosition() - 1)));
                     String modificationShortName = modificationAccession;
-                    if ((prideModPTM != null)
-                            && prideModPTM.isBiologicalRelevant()) {
+                    if ((prideModPTM != null) && prideModPTM.isBiologicalRelevant()) {
                         modificationShortName = prideModPTM.getShortName();
+                    }else{
+                        // Modifications are from Anchore modification.
+                        List<PTM> ptm = ModReader.getInstance().getAnchorModification(modificationAccession, String.valueOf(clusteredPSMReport.getSequence().charAt(modification.getMainPosition() - 1)));
+                        if(ptm != null && ptm.size() == 1){
+                            modificationShortName = ptm.get(0).getShortName();
+                        }
+
                     }
                     if (modificationsMap.get(modificationMainPosition) == null) {
                         modificationsMap.put(modificationMainPosition, new ArrayList<>());
