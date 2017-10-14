@@ -37,7 +37,7 @@
         <!-- TDD -->
         <uk.ac.ebi.pride.architectural-pride-tdd.version>1.0.3</uk.ac.ebi.pride.architectural-pride-tdd.version>
         <uk.ac.ebi.pride.proteogenomics.pogo-libpogo.version>1.0-SNAPSHOT</uk.ac.ebi.pride.proteogenomics.pogo-libpogo.version>
-        <uk.ac.ebi.pride.utilities-pride-mod.version>2.1.8-SNAPSHOT</uk.ac.ebi.pride.utilities-pride-mod.version>
+        <uk.ac.ebi.pride.utilities-pride-mod.version>2.1.8</uk.ac.ebi.pride.utilities-pride-mod.version>
 
         <project.build.finalName>${project.artifactId}-${project.version}</project.build.finalName>
         <junit.version>4.11</junit.version>
